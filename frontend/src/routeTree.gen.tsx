@@ -18,6 +18,8 @@ import { CompaniesPage } from "@/routes/companies";
 import { UsersPage } from "@/routes/users";
 import { NotificationsPage } from "@/routes/notifications";
 import { SettingsPage } from "@/routes/settings";
+import { DepartmentsPage } from "@/routes/departments";
+import { VendorsPage } from "@/routes/vendors";
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -64,6 +66,8 @@ const companiesRoute = createRoute({ getParentRoute: () => authLayout, path: "/c
 const usersRoute = createRoute({ getParentRoute: () => authLayout, path: "/users", component: UsersPage });
 const notificationsRoute = createRoute({ getParentRoute: () => authLayout, path: "/notifications", component: NotificationsPage });
 const settingsRoute = createRoute({ getParentRoute: () => authLayout, path: "/settings", component: SettingsPage });
+const departmentsRoute = createRoute({ getParentRoute: () => authLayout, path: "/departments", component: DepartmentsPage });
+const vendorsRoute = createRoute({ getParentRoute: () => authLayout, path: "/vendors", component: VendorsPage });
 
 export const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -83,5 +87,7 @@ export const routeTree = rootRoute.addChildren([
     usersRoute,
     notificationsRoute,
     settingsRoute,
+    departmentsRoute,
+    vendorsRoute,
   ]),
 ]);

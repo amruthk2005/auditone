@@ -2,24 +2,30 @@ import { PageShell } from "@/components/page-shell";
 import { DataTable, type Column } from "@/components/data-table";
 import { KpiStrip } from "@/components/kpi-strip";
 import { StatusBadge } from "@/components/status-badge";
-import { products } from "@/lib/mock-data";
 import { Plus, Package, DollarSign, Boxes, Wrench } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchProducts } from "@/lib/api";
 
-type P = (typeof products)[number];
+type P = any;
 
 const cols: Column<P>[] = [
-  { key: "sku", header: "SKU", render: (p) => <span style={{ fontFamily: "monospace", fontSize: "0.8rem", color: "var(--primary)" }}>{p.sku}</span> },
+  { key: "id", header: "ID", render: (p) => <span style={{ fontFamily: "monospace", fontSize: "0.8rem", color: "var(--primary)" }}>#{p.id}</span> },
   { key: "name", header: "Name" },
   { key: "category", header: "Category" },
   { key: "location", header: "Location" },
-  { key: "value", header: "Value", render: (p) => `$${p.value.toLocaleString()}` },
-  { key: "status", header: "Status", render: (p) => <StatusBadge value={p.status} /> },
+  { key: "cost", header: "Cost", render: (p) => `$${Number(p.cost).toLocaleString()}` },
+  { key: "status", header: "Status", render: (p) => <StatusBadge value={p.status || "Pending"} /> },
 ];
 
 export function ProductsPage() {
-  const total = products.reduce((s, p) => s + p.value, 0);
-  const inUse = products.filter((p) => p.status === "In Use").length;
-  const maint = products.filter((p) => p.status === "Maintenance").length;
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ["products"],
+    queryFn: fetchProducts,
+  });
+
+  const total = products.reduce((s: number, p: any) => s + Number(p.cost || 0), 0);
+  const inUse = products.filter((p: any) => p.status === "In Use").length;
+  const maint = products.filter((p: any) => p.status === "Maintenance").length;
 
   return (
     <PageShell
@@ -39,7 +45,7 @@ export function ProductsPage() {
           { label: "Stock Value", value: `$${(total / 1000).toFixed(1)}k`, icon: DollarSign },
         ]}
       />
-      <DataTable columns={cols} rows={products} />
+      {isLoading ? <p>Loading...</p> : <DataTable columns={cols} rows={products} />}
     </PageShell>
   );
 }

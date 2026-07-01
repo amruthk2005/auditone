@@ -1,8 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, ClipboardList, Package, QrCode, ScanLine,
-  DollarSign, TrendingDown, FileText, Building2, Users, Bell,
-  Settings, LogOut, ChevronLeft, ChevronRight,
+  DollarSign, TrendingDown, FileText, Building2, Building, Users, Bell,
+  Settings, LogOut, ChevronLeft, ChevronRight, Truck,
 } from "lucide-react";
 import { useState } from "react";
 import { getMockUser, signOutMock } from "@/lib/auth";
@@ -36,6 +36,8 @@ const groups = [
     label: "Admin",
     items: [
       { to: "/companies", icon: Building2, label: "Companies" },
+      { to: "/departments", icon: Building, label: "Departments" },
+      { to: "/vendors", icon: Truck, label: "Vendors" },
       { to: "/users", icon: Users, label: "Users" },
       { to: "/notifications", icon: Bell, label: "Notifications" },
       { to: "/settings", icon: Settings, label: "Settings" },

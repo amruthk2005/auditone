@@ -8,11 +8,21 @@ export function LoginPage() {
   const [email, setEmail] = useState("admin@acme.com");
   const [password, setPassword] = useState("demo");
   const [show, setShow] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await signInMock({ email, password });
-    navigate({ to: "/dashboard" });
+    setLoginError(null);
+    setLoading(true);
+    try {
+      await signInMock({ email, password });
+      navigate({ to: "/dashboard" });
+    } catch {
+      setLoginError("Invalid email or password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -69,12 +79,25 @@ export function LoginPage() {
               </div>
             </div>
 
+            {loginError && (
+              <div
+                style={{
+                  display: "flex", alignItems: "center", gap: "0.5rem",
+                  background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)",
+                  borderRadius: "0.5rem", padding: "0.75rem", color: "#f87171", fontSize: "0.85rem",
+                }}
+              >
+                ⚠ {loginError}
+              </div>
+            )}
+
             <button
               type="submit"
               className="btn btn-primary btn-lg"
               style={{ justifyContent: "center", marginTop: "0.25rem" }}
+              disabled={loading}
             >
-              <Lock size={16} /> Sign in
+              {loading ? "Signing in…" : <><Lock size={16} /> Sign in</>}
             </button>
 
             <div className="auth-divider">
@@ -88,7 +111,7 @@ export function LoginPage() {
               <Link to="/register" className="auth-link">Sign up</Link>
             </p>
             <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--muted-foreground)", margin: 0 }}>
-              Demo mode — use any credentials to log in.
+              Login with <strong>admin@acme.com</strong> / <strong>demo</strong>
             </p>
           </form>
         </div>

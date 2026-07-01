@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { fetchDashboardStats } from "@/lib/api";
 import { PageShell } from "@/components/page-shell";
 import { DataTable, type Column } from "@/components/data-table";
 import { KpiStrip } from "@/components/kpi-strip";
@@ -6,7 +8,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { audits, notifications } from "@/lib/mock-data";
 import {
   Package, ClipboardList, Hourglass, DollarSign,
-  TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, XCircle, ArrowLeftRight,
+  TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, XCircle, ArrowLeftRight, Building2
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -38,19 +40,22 @@ const activity = [
   { icon: ClipboardList, tint: "rgba(109,40,217,0.1)", color: "var(--primary)", what: "Audit Completed", to: "Audit #AUD-2024-0518", type: "Audit", user: "John Doe", when: "May 18, 2024 10:24 AM" },
   { icon: CheckCircle2, tint: "#d1fae5", color: "#059669", what: "Product Verified", to: "Wireless Mouse — WM-102", type: "Product", user: "Jane Smith", when: "May 18, 2024 09:41 AM" },
   { icon: AlertTriangle, tint: "#fef3c7", color: "#d97706", what: "Item Marked as Damaged", to: "Laptop Dell — DL-5300", type: "Product", user: "Mike Johnson", when: "May 17, 2024 04:15 PM" },
-  { icon: XCircle, tint: "#ffe4e6", color: "#dc2626", what: "Item Marked as Missing", to: "Projector Epson — EB-X41", type: "Product", user: "Sarah Lee", when: "May 17, 2024 02:32 PM" },
-  { icon: ArrowLeftRight, tint: "#e0f2fe", color: "#0284c7", what: "Mismatch Detected", to: "Monitor LG — 24MK600M", type: "Audit", user: "David Brown", when: "May 17, 2024 11:08 AM" },
-];
-
-const kpis = [
-  { label: "Total Products", value: "8,420", delta: "+12.5%", up: true, icon: Package },
-  { label: "Active Audits", value: "12", delta: "+9.1%", up: true, icon: ClipboardList },
-  { label: "Pending Validation", value: "145", delta: "-4.3%", up: false, icon: Hourglass },
-  { label: "Stock Value", value: "$2.4M", delta: "+7.8%", up: true, icon: DollarSign },
 ];
 
 export function DashboardPage() {
+  const { data: stats = { products_count: 0, companies_count: 0, audits_count: 0 } } = useQuery({
+    queryKey: ["dashboardStats"],
+    queryFn: fetchDashboardStats,
+  });
+
   const total = breakdown.reduce((s, b) => s + b.value, 0);
+
+  const kpis = [
+    { label: "Total Products", value: String(stats.products_count), delta: "+12.5%", up: true, icon: Package },
+    { label: "Registered Companies", value: String(stats.companies_count), delta: "+9.1%", up: true, icon: Building2 },
+    { label: "Total Audits", value: String(stats.audits_count), delta: "-4.3%", up: false, icon: ClipboardList },
+    { label: "Stock Value", value: "$2.4M", delta: "+7.8%", up: true, icon: DollarSign },
+  ];
 
   return (
     <PageShell
