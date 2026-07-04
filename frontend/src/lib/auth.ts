@@ -49,6 +49,7 @@ export function signOutMock() {
   currentUser = null;
   sessionStorage.removeItem("auditone_user");
   localStorage.removeItem("token");
+  window.location.href = "/login";
 }
 
 export function isAuthenticated() {

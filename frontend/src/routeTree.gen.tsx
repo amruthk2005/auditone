@@ -3,7 +3,7 @@ import { AppSidebar } from "@/components/sidebar";
 import { isAuthenticated } from "@/lib/auth";
 
 // ── Root ──────────────────────────────────────────────────────────────────────
-import { LoginPage } from "@/routes/login";
+import { LoginPage, CompanyLoginPage, AuditorLoginPage } from "@/routes/login";
 import { RegisterPage } from "@/routes/register";
 import { DashboardPage } from "@/routes/dashboard";
 import { AuditsPage } from "@/routes/audits";
@@ -44,6 +44,8 @@ const authLayout = createRoute({
 
 // ── Public routes ─────────────────────────────────────────────────────────────
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: "/login", component: LoginPage });
+const companyLoginRoute = createRoute({ getParentRoute: () => rootRoute, path: "/login/company", component: CompanyLoginPage });
+const auditorLoginRoute = createRoute({ getParentRoute: () => rootRoute, path: "/login/auditor", component: AuditorLoginPage });
 const registerRoute = createRoute({ getParentRoute: () => rootRoute, path: "/register", component: RegisterPage });
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -72,6 +74,8 @@ const vendorsRoute = createRoute({ getParentRoute: () => authLayout, path: "/ven
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
+  companyLoginRoute,
+  auditorLoginRoute,
   registerRoute,
   authLayout.addChildren([
     dashboardRoute,

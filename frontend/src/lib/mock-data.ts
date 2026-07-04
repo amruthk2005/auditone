@@ -101,3 +101,50 @@ export const dashboardStats = [
   { label: "Pending Validation", value: "145", delta: "-4.3%", up: false },
   { label: "Stock Value", value: "$2.4M", delta: "+7.8%", up: true },
 ];
+
+// ── Stock Inventory (Company User) ───────────────────────────────────────────
+export type StockItem = {
+  id: string;
+  sku: string;
+  name: string;
+  category: string;
+  location: string;
+  expectedQty: number;
+  actualQty: number;
+  unitCost: number;
+  status: "In Use" | "In Storage" | "Maintenance" | "Missing";
+};
+
+export const stockInventory: StockItem[] = [
+  { id: "s-001", sku: "WM-102",  name: "Wireless Mouse",      category: "Peripherals",  location: "Warehouse A",  expectedQty: 50,  actualQty: 48,  unitCost: 45,   status: "In Use" },
+  { id: "s-002", sku: "DL-5300", name: "Laptop Dell",          category: "Computing",    location: "HQ Floor 3",   expectedQty: 30,  actualQty: 30,  unitCost: 1200, status: "In Use" },
+  { id: "s-003", sku: "EB-X41",  name: "Projector Epson",      category: "AV Equipment", location: "Meeting Rm 2", expectedQty: 5,   actualQty: 4,   unitCost: 780,  status: "In Storage" },
+  { id: "s-004", sku: "LG-24MK", name: "Monitor LG 24\"",      category: "Displays",     location: "HQ Floor 3",   expectedQty: 40,  actualQty: 40,  unitCost: 320,  status: "In Use" },
+  { id: "s-005", sku: "HP-L401", name: "HP LaserJet Printer",  category: "Printing",     location: "HQ Floor 1",   expectedQty: 8,   actualQty: 7,   unitCost: 450,  status: "Maintenance" },
+  { id: "s-006", sku: "CH-X2",   name: "Ergonomic Chair",      category: "Furniture",    location: "Office Suite", expectedQty: 80,  actualQty: 80,  unitCost: 220,  status: "In Use" },
+  { id: "s-007", sku: "SK-G913", name: "Keyboard Logitech",    category: "Peripherals",  location: "Warehouse A",  expectedQty: 60,  actualQty: 55,  unitCost: 120,  status: "In Storage" },
+];
+
+// ── Mismatch Records (Auditor) ───────────────────────────────────────────────
+export type MismatchRecord = {
+  id: string;
+  sku: string;
+  productName: string;
+  location: string;
+  expectedQty: number;
+  actualQty: number;
+  variance: number;
+  type: "Quantity" | "Location" | "Missing" | "Damaged";
+  auditSession: string;
+  scannedAt: string;
+  notes: string;
+  resolved: boolean;
+};
+
+export const mismatches: MismatchRecord[] = [
+  { id: "mm-001", sku: "WM-102",  productName: "Wireless Mouse",     location: "Warehouse A",  expectedQty: 50,  actualQty: 48, variance: -2,  type: "Quantity",  auditSession: "sess-001", scannedAt: "2024-03-15 09:12", notes: "", resolved: false },
+  { id: "mm-002", sku: "EB-X41",  productName: "Projector Epson",    location: "Meeting Rm 2", expectedQty: 5,   actualQty: 4,  variance: -1,  type: "Missing",   auditSession: "sess-001", scannedAt: "2024-03-15 10:00", notes: "", resolved: false },
+  { id: "mm-003", sku: "DL-5300", productName: "Laptop Dell",        location: "Storeroom B",  expectedQty: 30,  actualQty: 30, variance: 0,   type: "Location",  auditSession: "sess-002", scannedAt: "2024-04-10 10:45", notes: "Found in wrong room", resolved: false },
+  { id: "mm-004", sku: "HP-L401", productName: "HP LaserJet Printer",location: "HQ Floor 1",   expectedQty: 8,   actualQty: 7,  variance: -1,  type: "Damaged",   auditSession: "sess-002", scannedAt: "2024-04-10 11:20", notes: "Unit has cracked casing", resolved: true },
+  { id: "mm-005", sku: "SK-G913", productName: "Keyboard Logitech",  location: "Warehouse A",  expectedQty: 60,  actualQty: 55, variance: -5,  type: "Quantity",  auditSession: "sess-004", scannedAt: "2024-05-01 14:30", notes: "", resolved: false },
+];

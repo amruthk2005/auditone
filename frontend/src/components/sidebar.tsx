@@ -2,54 +2,121 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, ClipboardList, Package, QrCode, ScanLine,
   DollarSign, TrendingDown, FileText, Building2, Building, Users, Bell,
-  Settings, LogOut, ChevronLeft, ChevronRight, Truck,
+  Settings, LogOut, ChevronLeft, ChevronRight, Truck, ClipboardCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { getMockUser, signOutMock } from "@/lib/auth";
 
-const groups = [
-  {
-    label: "Overview",
-    items: [
-      { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      { to: "/audits", icon: ClipboardList, label: "Audits" },
-      { to: "/audit-sessions", icon: ClipboardList, label: "Audit Sessions" },
-      { to: "/products", icon: Package, label: "Products" },
-      { to: "/qr-codes", icon: QrCode, label: "QR Codes" },
-      { to: "/scans", icon: ScanLine, label: "Scans" },
-    ],
-  },
-  {
-    label: "Finance",
-    items: [
-      { to: "/valuations", icon: DollarSign, label: "Valuations" },
-      { to: "/depreciation", icon: TrendingDown, label: "Depreciation" },
-      { to: "/reports", icon: FileText, label: "Reports" },
-    ],
-  },
-  {
-    label: "Admin",
-    items: [
-      { to: "/companies", icon: Building2, label: "Companies" },
-      { to: "/departments", icon: Building, label: "Departments" },
-      { to: "/vendors", icon: Truck, label: "Vendors" },
-      { to: "/users", icon: Users, label: "Users" },
-      { to: "/notifications", icon: Bell, label: "Notifications" },
-      { to: "/settings", icon: Settings, label: "Settings" },
-    ],
-  },
-];
+type NavGroup = { label: string; items: { to: string; icon: React.ElementType; label: string }[] };
+
+function buildNavGroups(role: string): NavGroup[] {
+  if (role === "admin") {
+    return [
+      {
+        label: "Overview",
+        items: [{ to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }],
+      },
+      {
+        label: "Admin",
+        items: [
+          { to: "/companies", icon: Building2, label: "Companies" },
+          { to: "/users", icon: Users, label: "Users" },
+          { to: "/notifications", icon: Bell, label: "Notifications" },
+          { to: "/settings", icon: Settings, label: "Settings" },
+        ],
+      },
+    ];
+  }
+
+  if (role === "auditor") {
+    return [
+      {
+        label: "Overview",
+        items: [{ to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }],
+      },
+      {
+        label: "Auditing",
+        items: [
+          { to: "/audits", icon: ClipboardList, label: "Audits" },
+          { to: "/audit-sessions", icon: ClipboardCheck, label: "Audit Sessions" },
+          { to: "/scans", icon: ScanLine, label: "Scans" },
+          { to: "/qr-codes", icon: QrCode, label: "QR Codes" },
+        ],
+      },
+      {
+        label: "Reports",
+        items: [
+          { to: "/reports", icon: FileText, label: "Reports" },
+          { to: "/notifications", icon: Bell, label: "Notifications" },
+        ],
+      },
+      {
+        label: "Account",
+        items: [{ to: "/settings", icon: Settings, label: "Settings" }],
+      },
+    ];
+  }
+
+  // company_user (default for all other roles)
+  return [
+    {
+      label: "Overview",
+      items: [{ to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }],
+    },
+    {
+      label: "Operations",
+      items: [
+        { to: "/products", icon: Package, label: "Products" },
+        { to: "/qr-codes", icon: QrCode, label: "QR Codes" },
+        { to: "/departments", icon: Building, label: "Departments" },
+        { to: "/vendors", icon: Truck, label: "Vendors" },
+      ],
+    },
+    {
+      label: "Finance",
+      items: [
+        { to: "/valuations", icon: DollarSign, label: "Valuations" },
+        { to: "/depreciation", icon: TrendingDown, label: "Depreciation" },
+        { to: "/reports", icon: FileText, label: "Reports" },
+      ],
+    },
+    {
+      label: "Account",
+      items: [
+        { to: "/notifications", icon: Bell, label: "Notifications" },
+        { to: "/settings", icon: Settings, label: "Settings" },
+      ],
+    },
+  ];
+}
+
+/** Small coloured pill to indicate user role */
+function RolePill({ role }: { role: string }) {
+  const map: Record<string, { label: string; color: string }> = {
+    admin: { label: "Admin", color: "#f59e0b" },
+    auditor: { label: "Auditor", color: "#10b981" },
+    company_user: { label: "Company", color: "#6366f1" },
+  };
+  const { label, color } = map[role.toLowerCase()] ?? { label: role, color: "#94a3b8" };
+  return (
+    <span style={{
+      fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.06em",
+      textTransform: "uppercase", color, background: `${color}22`,
+      borderRadius: "999px", padding: "0.15rem 0.5rem",
+    }}>
+      {label}
+    </span>
+  );
+}
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
   const user = getMockUser();
+  const role = user?.role?.toLowerCase() ?? "company_user";
+
+  const navGroups = buildNavGroups(role);
 
   return (
     <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>
@@ -84,7 +151,7 @@ export function AppSidebar() {
       </div>
 
       <div className="sidebar-content">
-        {groups.map((group) => (
+        {navGroups.map((group) => (
           <div key={group.label} style={{ marginBottom: "0.5rem" }}>
             {!collapsed && <div className="sidebar-group-label">{group.label}</div>}
             {group.items.map((item) => {
@@ -113,7 +180,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="sidebar-user-info" style={{ flex: 1, minWidth: 0 }}>
               <div className="sidebar-user-name">{user?.name ?? "Guest"}</div>
-              <div className="sidebar-user-role">{user?.role ?? "—"}</div>
+              <RolePill role={role} />
             </div>
           )}
           {!collapsed && (
