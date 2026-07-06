@@ -2,12 +2,13 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, ClipboardList, Package, QrCode, ScanLine,
   DollarSign, TrendingDown, FileText, Building2, Building, Users, Bell,
-  Settings, LogOut, ChevronLeft, ChevronRight, Truck,
+  Settings, LogOut, ChevronLeft, ChevronRight, Truck, Activity, Brain,
+  ShieldCheck, UserCircle, ListChecks, UserPlus, BarChart3, History,
 } from "lucide-react";
 import { useState } from "react";
 import { getMockUser, signOutMock } from "@/lib/auth";
 
-const groups = [
+const companyGroups = [
   {
     label: "Overview",
     items: [
@@ -45,11 +46,58 @@ const groups = [
   },
 ];
 
+const adminGroups = [
+  {
+    label: "Overview",
+    items: [
+      { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    ],
+  },
+  {
+    label: "Company Management",
+    items: [
+      { to: "/admin/companies", icon: Building2, label: "Company List" },
+      { to: "/admin/companies/pending", icon: ListChecks, label: "Pending Approvals" },
+      { to: "/admin/companies/active", icon: ShieldCheck, label: "Active Companies" },
+      { to: "/admin/companies/suspended", icon: Building, label: "Suspended Companies" },
+    ],
+  },
+  {
+    label: "Auditor Management",
+    items: [
+      { to: "/admin/auditors", icon: Users, label: "Auditor List" },
+      { to: "/admin/auditors/create", icon: UserPlus, label: "Create Auditor" },
+      { to: "/admin/auditors/assigned", icon: ClipboardList, label: "Assigned Audits" },
+      { to: "/admin/auditors/performance", icon: BarChart3, label: "Performance" },
+    ],
+  },
+  {
+    label: "Audit Management",
+    items: [
+      { to: "/admin/audits/running", icon: Activity, label: "Running Audits" },
+      { to: "/admin/audits/completed", icon: ClipboardList, label: "Completed Audits" },
+      { to: "/admin/audits/cancelled", icon: ListChecks, label: "Cancelled Audits" },
+    ],
+  },
+  {
+    label: "Platform",
+    items: [
+      { to: "/admin/reports", icon: FileText, label: "Reports" },
+      { to: "/admin/notifications", icon: Bell, label: "Notifications" },
+      { to: "/admin/system-logs", icon: History, label: "System Logs" },
+      { to: "/admin/ai-insights", icon: Brain, label: "AI Insights" },
+      { to: "/admin/settings", icon: Settings, label: "Settings" },
+      { to: "/admin/profile", icon: UserCircle, label: "Admin Profile" },
+    ],
+  },
+];
+
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
   const user = getMockUser();
+  const groups = user?.role === "Admin" ? adminGroups : companyGroups;
 
   return (
     <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>

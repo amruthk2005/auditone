@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, Home } from "lucide-react";
-import { signInMock } from "@/lib/auth";
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, Home, Users } from "lucide-react";
+import { getRoleRedirect, signInMock, type LoginRole } from "@/lib/auth";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [role, setRole] = useState<LoginRole>("Company");
   const [email, setEmail] = useState("admin@acme.com");
   const [password, setPassword] = useState("demo");
   const [show, setShow] = useState(false);
@@ -16,10 +17,10 @@ export function LoginPage() {
     setLoginError(null);
     setLoading(true);
     try {
-      await signInMock({ email, password });
-      navigate({ to: "/dashboard" });
-    } catch {
-      setLoginError("Invalid email or password. Please try again.");
+      await signInMock({ email, password, role });
+      navigate({ to: getRoleRedirect(role) });
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : "Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -41,6 +42,30 @@ export function LoginPage() {
         <div className="auth-card">
           <h1 className="auth-title">Welcome back</h1>
           <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+            <div className="field-group">
+              <label className="label" htmlFor="role">Login role</label>
+              <div className="input-icon">
+                <Users size={16} className="icon" />
+                <select
+                  id="role"
+                  className="input"
+                  value={role}
+                  onChange={(e) => {
+                    const nextRole = e.target.value as LoginRole;
+                    setRole(nextRole);
+                    if (nextRole === "Admin") setEmail("admin@auditone.com");
+                    if (nextRole === "Company") setEmail("admin@acme.com");
+                    if (nextRole === "Auditor") setEmail("auditor@auditone.com");
+                  }}
+                  required
+                >
+                  <option>Admin</option>
+                  <option>Company</option>
+                  <option>Auditor</option>
+                </select>
+              </div>
+            </div>
+
             <div className="field-group">
               <label className="label" htmlFor="email">Email</label>
               <div className="input-icon">
@@ -111,7 +136,7 @@ export function LoginPage() {
               <Link to="/register" className="auth-link">Sign up</Link>
             </p>
             <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--muted-foreground)", margin: 0 }}>
-              Login with <strong>admin@acme.com</strong> / <strong>demo</strong>
+              Demo password for all roles: <strong>demo</strong>
             </p>
           </form>
         </div>

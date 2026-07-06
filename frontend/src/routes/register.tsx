@@ -1,18 +1,25 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
-import { Building2, User, Mail, Lock, Eye, EyeOff, Users, Home, ShieldCheck } from "lucide-react";
-import { signInMock } from "@/lib/auth";
+import { Building2, User, Mail, Lock, Eye, EyeOff, Home, ShieldCheck, Hash, MapPin, Phone, Briefcase } from "lucide-react";
+import { registerCompanyPending } from "@/lib/auth";
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [show2, setShow2] = useState(false);
   const [email, setEmail] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [adminName, setAdminName] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    signInMock({ email: email || "user@acme.com" });
-    navigate({ to: "/dashboard" });
+    registerCompanyPending({
+      companyName: companyName || "New Company",
+      email: email || "admin@company.com",
+      adminName: adminName || "Company Admin",
+    });
+    setSubmitted(true);
   };
 
   return (
@@ -29,43 +36,100 @@ export function RegisterPage() {
 
       <div className="auth-main" style={{ padding: "2.5rem 1rem" }}>
         <div className="auth-card" style={{ maxWidth: "36rem" }}>
-          <h1 className="auth-title" style={{ color: "var(--foreground)" }}>Create your account</h1>
+          <h1 className="auth-title">Company registration</h1>
+          {submitted ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div style={{ background: "rgba(22,163,74,0.12)", border: "1px solid rgba(22,163,74,0.35)", borderRadius: "0.75rem", padding: "1rem", color: "#86efac" }}>
+                Registration submitted. Your company status is now Pending Approval.
+              </div>
+              <p style={{ margin: 0, color: "rgba(255,255,255,0.65)", fontSize: "0.875rem" }}>
+                An AuditOne admin must approve the company before login is enabled.
+              </p>
+              <button type="button" className="btn btn-primary btn-lg" style={{ justifyContent: "center" }} onClick={() => navigate({ to: "/login" })}>
+                Go to sign in
+              </button>
+            </div>
+          ) : (
           <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
 
-            {/* Company */}
             <div className="field-group">
               <label className="label">Company Name</label>
               <div className="input-icon">
                 <Building2 size={16} className="icon" />
-                <input type="text" className="input" placeholder="Your company name" />
+                <input type="text" className="input" placeholder="Your company name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required />
               </div>
             </div>
 
-            {/* Full name */}
             <div className="field-group">
-              <label className="label">Full Name</label>
+              <label className="label">Registration Number</label>
               <div className="input-icon">
-                <User size={16} className="icon" />
-                <input type="text" className="input" placeholder="Your full name" />
+                <Hash size={16} className="icon" />
+                <input type="text" className="input" placeholder="CIN / registration number" required />
               </div>
             </div>
 
-            {/* Email */}
             <div className="field-group">
-              <label className="label">Email</label>
+              <label className="label">GST Number</label>
+              <div className="input-icon">
+                <Hash size={16} className="icon" />
+                <input type="text" className="input" placeholder="GSTIN" required />
+              </div>
+            </div>
+
+            <div className="field-group">
+              <label className="label">Industry</label>
+              <div className="input-icon">
+                <Briefcase size={16} className="icon" />
+                <select className="input" required>
+                  <option>Manufacturing</option>
+                  <option>Technology</option>
+                  <option>Finance</option>
+                  <option>Retail</option>
+                  <option>Healthcare</option>
+                  <option>Logistics</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="field-group">
+              <label className="label">Address</label>
+              <div className="input-icon">
+                <MapPin size={16} className="icon" />
+                <input type="text" className="input" placeholder="Registered office address" required />
+              </div>
+            </div>
+
+            <div className="field-group">
+              <label className="label">Company Email</label>
               <div className="input-icon">
                 <Mail size={16} className="icon" />
                 <input
                   type="email"
                   className="input"
-                  placeholder="you@company.com"
+                  placeholder="admin@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
             </div>
 
-            {/* Password */}
+            <div className="field-group">
+              <label className="label">Phone Number</label>
+              <div className="input-icon">
+                <Phone size={16} className="icon" />
+                <input type="tel" className="input" placeholder="+91 98765 43210" required />
+              </div>
+            </div>
+
+            <div className="field-group">
+              <label className="label">Company Admin Name</label>
+              <div className="input-icon">
+                <User size={16} className="icon" />
+                <input type="text" className="input" placeholder="Primary admin name" value={adminName} onChange={(e) => setAdminName(e.target.value)} required />
+              </div>
+            </div>
+
             <div className="field-group">
               <label className="label">Password</label>
               <div className="input-icon">
@@ -77,7 +141,6 @@ export function RegisterPage() {
               </div>
             </div>
 
-            {/* Confirm Password */}
             <div className="field-group">
               <label className="label">Confirm Password</label>
               <div className="input-icon">
@@ -89,21 +152,12 @@ export function RegisterPage() {
               </div>
             </div>
 
-            {/* Role */}
-            <div className="field-group">
-              <label className="label">Role</label>
-              <div className="input-icon">
-                <Users size={16} className="icon" />
-                <select className="select">
-                  <option>Company User / Auditor</option>
-                  <option>Admin</option>
-                  <option>Manager</option>
-                </select>
-              </div>
+            <div style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.24)", borderRadius: "0.75rem", padding: "0.85rem", color: "rgba(255,255,255,0.72)", fontSize: "0.82rem" }}>
+              Only Company accounts can self-register. Admin and Auditor accounts are created by AuditOne admins.
             </div>
 
             <button type="submit" className="btn btn-primary btn-lg" style={{ justifyContent: "center", marginTop: "0.25rem" }}>
-              Create Account
+              Submit for Approval
             </button>
 
             <p style={{ textAlign: "center", fontSize: "0.875rem", margin: 0 }}>
@@ -111,6 +165,7 @@ export function RegisterPage() {
               <Link to="/login" className="auth-link">Sign in</Link>
             </p>
           </form>
+          )}
         </div>
       </div>
     </div>
