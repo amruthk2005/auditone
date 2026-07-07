@@ -12,7 +12,7 @@ import {
   ResponsiveContainer, Cell,
 } from "recharts";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchProducts, generateQrCode, fetchQrCodes, getQrImageUrl } from "@/lib/api";
+import { fetchProducts, createProduct, generateQrCode, fetchQrCodes, getQrImageUrl } from "@/lib/api";
 import { stockInventory, valuations } from "@/lib/mock-data";
 import type { StockItem } from "@/lib/mock-data";
 
@@ -20,10 +20,10 @@ import type { StockItem } from "@/lib/mock-data";
 type Product = { id: number; name: string; category: string; location: string; status: string; cost: string };
 type QRRow = { qr_id: number; product_id: number | null; qr_code: string; generated_date: string | null; barcode_type: string | null };
 type GenerateResult = { qr_id: number; qr_code: string; product_id: number; image_base64: string; already_existed: boolean };
-type NewProduct = { name: string; sku: string; category: string; location: string; cost: string; status: string };
+type NewProduct = { name: string; category: string; quantity: string; cost: string; purchase_date: string; serial_no: string; location: string; vendor: string; description: string; status: string };
 
 const CATEGORIES = ["Computing", "Peripherals", "AV Equipment", "Displays", "Printing", "Furniture", "Networking", "Other"];
-const STATUSES = ["In Use", "In Storage", "Maintenance", "Retired"];
+const STATUSES = ["In Use", "In Storage", "Maintenance", "Retired", "Pending"];
 
 // ─── Section Header ───────────────────────────────────────────────────────────
 function SectionHeader({ icon: Icon, title, subtitle, color = "var(--primary)", actions }: {
@@ -73,28 +73,51 @@ function KpiCard({ label, value, delta, up, icon: Icon, color, tint }: {
 }
 
 // ─── 1. Product Management Section ───────────────────────────────────────────
+const EMPTY_FORM: NewProduct = { name: "", category: "Computing", quantity: "1", cost: "", purchase_date: "", serial_no: "", location: "", vendor: "", description: "", status: "In Use" };
+
 function ProductSection() {
+  const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState<NewProduct>({ name: "", sku: "", category: "Computing", location: "", cost: "", status: "In Use" });
-  const [localProducts, setLocalProducts] = useState<(NewProduct & { id: string })[]>([]);
+  const [form, setForm] = useState<NewProduct>(EMPTY_FORM);
   const [search, setSearch] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
 
   const { data: apiProducts = [], isLoading } = useQuery({ queryKey: ["products"], queryFn: fetchProducts });
-  const allProducts = [
-    ...apiProducts,
-    ...localProducts.map((p) => ({ ...p, cost: p.cost })),
-  ];
-  const filtered = allProducts.filter((p: Product) =>
+
+  const filtered = (apiProducts as any[]).filter((p: Product) =>
     p.name?.toLowerCase().includes(search.toLowerCase()) ||
     p.category?.toLowerCase().includes(search.toLowerCase()) ||
-    p.location?.toLowerCase().includes(search.toLowerCase())
+    (p.location ?? "")?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const addMutation = useMutation({
+    mutationFn: () => createProduct({
+      name: form.name,
+      category: form.category,
+      quantity: Number(form.quantity) || 1,
+      cost: Number(form.cost) || 0,
+      purchase_date: form.purchase_date || null,
+      serial_no: form.serial_no || null,
+      location: form.location || null,
+      vendor: form.vendor || null,
+      description: form.description || null,
+      status: form.status,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      setForm(EMPTY_FORM);
+      setShowModal(false);
+      setFormError(null);
+    },
+    onError: (err: any) => {
+      setFormError(err?.response?.data?.detail || "Failed to create product.");
+    },
+  });
+
   const handleAdd = () => {
-    if (!form.name || !form.sku) return;
-    setLocalProducts((prev) => [...prev, { ...form, id: `local-${Date.now()}` }]);
-    setForm({ name: "", sku: "", category: "Computing", location: "", cost: "", status: "In Use" });
-    setShowModal(false);
+    if (!form.name.trim()) { setFormError("Product name is required."); return; }
+    setFormError(null);
+    addMutation.mutate();
   };
 
   return (
@@ -111,7 +134,7 @@ function ProductSection() {
               onChange={(e) => setSearch(e.target.value)}
               className="input" style={{ width: "200px", fontSize: "0.82rem", padding: "0.4rem 0.75rem" }}
             />
-            <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)}>
+            <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY_FORM); setFormError(null); setShowModal(true); }}>
               <Plus size={14} /> Add Product
             </button>
           </>
@@ -129,7 +152,7 @@ function ProductSection() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "var(--muted-foreground)" }}>Loading…</td></tr>
+                <tr><td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "var(--muted-foreground)" }}><Loader2 size={18} className="animate-spin" style={{ display: "inline" }} /> Loading…</td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "var(--muted-foreground)", fontStyle: "italic" }}>No products found.</td></tr>
               ) : filtered.slice(0, 8).map((p: any, i: number) => (
@@ -137,9 +160,9 @@ function ProductSection() {
                   <td><span style={{ fontFamily: "monospace", fontSize: "0.78rem", color: "var(--primary)" }}>#{p.id}</span></td>
                   <td style={{ fontWeight: 500 }}>{p.name}</td>
                   <td><span style={{ background: "rgba(99,102,241,0.1)", color: "#6366f1", padding: "0.15rem 0.5rem", borderRadius: "0.375rem", fontSize: "0.75rem", fontWeight: 600 }}>{p.category}</span></td>
-                  <td style={{ color: "var(--muted-foreground)", fontSize: "0.85rem" }}>{p.location}</td>
-                  <td style={{ fontWeight: 600 }}>${Number(p.cost ?? p.value ?? 0).toLocaleString()}</td>
-                  <td><StatusBadge value={p.status || "Active"} /></td>
+                  <td style={{ color: "var(--muted-foreground)", fontSize: "0.85rem" }}>{p.location || "—"}</td>
+                  <td style={{ fontWeight: 600 }}>${Number(p.cost ?? 0).toLocaleString()}</td>
+                  <td><StatusBadge value={p.status || "Pending"} /></td>
                   <td>
                     <Link to="/qr-codes" className="btn btn-outline btn-sm" style={{ fontSize: "0.72rem", padding: "0.2rem 0.5rem" }}>
                       <QrCode size={11} /> QR
@@ -160,8 +183,8 @@ function ProductSection() {
       {/* Add Product Modal */}
       {showModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}
-          onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
-          <div style={{ background: "var(--bg-card, #fff)", border: "1px solid var(--border)", borderRadius: "1rem", padding: "2rem", width: "100%", maxWidth: "500px", boxShadow: "0 25px 60px rgba(0,0,0,0.3)" }}>
+          onClick={(e) => e.target === e.currentTarget && !addMutation.isPending && setShowModal(false)}>
+          <div style={{ background: "var(--bg-card, #fff)", border: "1px solid var(--border)", borderRadius: "1rem", padding: "2rem", width: "100%", maxWidth: "560px", boxShadow: "0 25px 60px rgba(0,0,0,0.35)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                 <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -169,45 +192,88 @@ function ProductSection() {
                 </div>
                 <div>
                   <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700 }}>Add New Product</h2>
-                  <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--muted-foreground)" }}>Fill in the product details below</p>
+                  <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--muted-foreground)" }}>Fill in the asset details below</p>
                 </div>
               </div>
-              <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)" }}><X size={18} /></button>
+              <button onClick={() => setShowModal(false)} disabled={addMutation.isPending} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)" }}><X size={18} /></button>
             </div>
 
+            {formError && (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: "0.5rem", padding: "0.75rem", color: "#f87171", fontSize: "0.82rem" }}>
+                <AlertCircle size={14} /> {formError}
+              </div>
+            )}
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              {[
-                { label: "Product Name *", key: "name", placeholder: "e.g. Dell Laptop" },
-                { label: "SKU *", key: "sku", placeholder: "e.g. DL-5300" },
-                { label: "Location", key: "location", placeholder: "e.g. HQ Floor 3" },
-                { label: "Unit Cost ($)", key: "cost", placeholder: "e.g. 1200" },
-              ].map(({ label, key, placeholder }) => (
-                <div key={key} className="field-group">
-                  <label className="label">{label}</label>
-                  <input type="text" className="input" placeholder={placeholder}
-                    value={(form as any)[key]}
-                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))} />
-                </div>
-              ))}
+              {/* Name */}
+              <div className="field-group" style={{ gridColumn: "1 / -1" }}>
+                <label className="label">Product Name *</label>
+                <input type="text" className="input" placeholder="e.g. Dell Latitude 5300"
+                  value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+              </div>
+              {/* Category */}
               <div className="field-group">
                 <label className="label">Category</label>
                 <select className="input" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}>
                   {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
+              {/* Status */}
               <div className="field-group">
                 <label className="label">Status</label>
                 <select className="input" value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
                   {STATUSES.map((s) => <option key={s}>{s}</option>)}
                 </select>
               </div>
+              {/* Quantity */}
+              <div className="field-group">
+                <label className="label">Quantity</label>
+                <input type="number" className="input" placeholder="1" min="0"
+                  value={form.quantity} onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))} />
+              </div>
+              {/* Unit Cost */}
+              <div className="field-group">
+                <label className="label">Unit Cost ($)</label>
+                <input type="number" className="input" placeholder="0.00" min="0" step="0.01"
+                  value={form.cost} onChange={(e) => setForm((f) => ({ ...f, cost: e.target.value }))} />
+              </div>
+              {/* Location */}
+              <div className="field-group">
+                <label className="label">Location</label>
+                <input type="text" className="input" placeholder="e.g. HQ Floor 3"
+                  value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} />
+              </div>
+              {/* Vendor */}
+              <div className="field-group">
+                <label className="label">Vendor</label>
+                <input type="text" className="input" placeholder="e.g. Dell Technologies"
+                  value={form.vendor} onChange={(e) => setForm((f) => ({ ...f, vendor: e.target.value }))} />
+              </div>
+              {/* Serial No */}
+              <div className="field-group">
+                <label className="label">Serial No.</label>
+                <input type="text" className="input" placeholder="e.g. SN-123456"
+                  value={form.serial_no} onChange={(e) => setForm((f) => ({ ...f, serial_no: e.target.value }))} />
+              </div>
+              {/* Purchase Date */}
+              <div className="field-group">
+                <label className="label">Purchase Date</label>
+                <input type="date" className="input"
+                  value={form.purchase_date} onChange={(e) => setForm((f) => ({ ...f, purchase_date: e.target.value }))} />
+              </div>
+              {/* Description */}
+              <div className="field-group" style={{ gridColumn: "1 / -1" }}>
+                <label className="label">Description</label>
+                <textarea className="input" placeholder="Optional notes about this asset…" rows={2} style={{ resize: "vertical" }}
+                  value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+              </div>
             </div>
 
             <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.5rem" }}>
-              <button className="btn btn-outline" style={{ flex: 1, justifyContent: "center" }} onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="btn btn-outline" style={{ flex: 1, justifyContent: "center" }} onClick={() => setShowModal(false)} disabled={addMutation.isPending}>Cancel</button>
               <button className="btn btn-primary" style={{ flex: 1, justifyContent: "center", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none" }}
-                disabled={!form.name || !form.sku} onClick={handleAdd}>
-                <Plus size={15} /> Add Product
+                disabled={!form.name.trim() || addMutation.isPending} onClick={handleAdd}>
+                {addMutation.isPending ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : <><Plus size={15} /> Add Product</>}
               </button>
             </div>
           </div>

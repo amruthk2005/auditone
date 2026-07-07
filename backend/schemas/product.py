@@ -18,6 +18,18 @@ class ProductBase(BaseModel):
 class ProductCreate(ProductBase):
     pass
 
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    quantity: Optional[int] = None
+    cost: Optional[Decimal] = None
+    purchase_date: Optional[date] = None
+    serial_no: Optional[str] = None
+    location: Optional[str] = None
+    vendor: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+
 class ProductResponse(ProductBase):
     id: int
 
