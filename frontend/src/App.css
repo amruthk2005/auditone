@@ -618,7 +618,16 @@ select.input {
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   padding-right: 2.25rem;
+  color: var(--text);
+  background-color: var(--input-bg);
 }
+
+/* Ensure option elements are always readable (light context) */
+select.input option {
+  background-color: #ffffff;
+  color: #1a0a2e;
+}
+
 
 /* ── Auth Pages ───────────────────────────────────────────── */
 .auth-page {
@@ -907,9 +916,8 @@ select.input {
   gap: 2rem;
 }
 
-/* select element inside auth card */
-.auth-card .select,
-.select {
+/* select element inside auth card — dark glass style */
+.auth-card .select {
   width: 100%;
   padding: 0.625rem 0.875rem;
   background: rgba(255,255,255,0.06);
@@ -927,9 +935,41 @@ select.input {
   background-position: right 0.75rem center;
 }
 
+/* select element used in the main app (light background) */
+.select {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background: var(--input-bg, #ffffff);
+  border: 1.5px solid var(--input-border, rgba(124,58,237,0.25));
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text, #1a0a2e);
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  padding-right: 2.25rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b5e82' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+}
+
 .auth-card .select:focus,
 .select:focus {
   border-color: #a855f7;
   box-shadow: 0 0 0 3px rgba(168,85,247,0.20);
+}
+
+/* Ensure option dropdowns are always readable in the dark auth context */
+.auth-card .select option,
+.auth-page .select option {
+  background-color: #1e1040;
+  color: #ffffff;
+}
+
+/* Ensure option dropdowns are readable in light in-app context */
+.select option {
+  background-color: #ffffff;
+  color: #1a0a2e;
 }
 
