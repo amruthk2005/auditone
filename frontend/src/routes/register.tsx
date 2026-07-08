@@ -3,11 +3,13 @@ import { useNavigate, Link } from "@tanstack/react-router";
 import { Building2, User, Mail, Lock, Eye, EyeOff, Users, Home, ShieldCheck } from "lucide-react";
 import { signInMock } from "@/lib/auth";
 
+
 export function RegisterPage() {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [show2, setShow2] = useState(false);
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("company");
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,12 +34,18 @@ export function RegisterPage() {
           <h1 className="auth-title" style={{ color: "var(--foreground)" }}>Create your account</h1>
           <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
 
-            {/* Company */}
+            {/* Company / Org */}
             <div className="field-group">
-              <label className="label">Company Name</label>
+              <label className="label">
+                {role === "admin" ? "Organisation Name" : role === "auditor" ? "Firm / Organisation Name" : "Company Name"}
+              </label>
               <div className="input-icon">
                 <Building2 size={16} className="icon" />
-                <input type="text" className="input" placeholder="Your company name" />
+                <input
+                  type="text"
+                  className="input"
+                  placeholder={role === "admin" ? "Organisation name" : role === "auditor" ? "Audit firm or organisation" : "Your company name"}
+                />
               </div>
             </div>
 
@@ -94,10 +102,14 @@ export function RegisterPage() {
               <label className="label">Role</label>
               <div className="input-icon">
                 <Users size={16} className="icon" />
-                <select className="select">
-                  <option>Company User / Auditor</option>
-                  <option>Admin</option>
-                  <option>Manager</option>
+                <select
+                  className="select"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                >
+                  <option value="company">Company User</option>
+                  <option value="auditor">Auditor</option>
+                  <option value="admin">Admin</option>
                 </select>
               </div>
             </div>
