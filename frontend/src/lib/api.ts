@@ -20,6 +20,44 @@ export const fetchProducts = async () => {
   return data;
 };
 
+export const createProduct = async (product: {
+  name: string;
+  category: string;
+  quantity: number;
+  cost: number;
+  purchase_date?: string | null;
+  serial_no?: string | null;
+  location?: string | null;
+  vendor?: string | null;
+  description?: string | null;
+  status?: string;
+}) => {
+  const { data } = await api.post("/products", product);
+  return data;
+};
+
+export const updateProduct = async (id: number, product: Partial<{
+  name: string;
+  category: string;
+  quantity: number;
+  cost: number;
+  purchase_date: string | null;
+  serial_no: string | null;
+  location: string | null;
+  vendor: string | null;
+  description: string | null;
+  status: string;
+}>) => {
+  const { data } = await api.put(`/products/${id}`, product);
+  return data;
+};
+
+export const deleteProduct = async (id: number) => {
+  const { data } = await api.delete(`/products/${id}`);
+  return data;
+};
+
+
 export const fetchAudits = async () => {
   const { data } = await api.get("/audits");
   return data;

@@ -3,11 +3,13 @@ import { useNavigate, Link } from "@tanstack/react-router";
 import { Building2, User, Mail, Lock, Eye, EyeOff, Home, ShieldCheck, Hash, MapPin, Phone, Briefcase } from "lucide-react";
 import { registerCompanyPending } from "@/lib/auth";
 
+
 export function RegisterPage() {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [show2, setShow2] = useState(false);
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("company");
   const [companyName, setCompanyName] = useState("");
   const [adminName, setAdminName] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -52,11 +54,21 @@ export function RegisterPage() {
           ) : (
           <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
 
+            {/* Company / Org */}
             <div className="field-group">
-              <label className="label">Company Name</label>
+              <label className="label">
+                {role === "admin" ? "Organisation Name" : role === "auditor" ? "Firm / Organisation Name" : "Company Name"}
+              </label>
               <div className="input-icon">
                 <Building2 size={16} className="icon" />
-                <input type="text" className="input" placeholder="Your company name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required />
+                <input
+                  type="text"
+                  className="input"
+                  placeholder={role === "admin" ? "Organisation name" : role === "auditor" ? "Audit firm or organisation" : "Your company name"}
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  required
+                />
               </div>
             </div>
 
@@ -152,8 +164,22 @@ export function RegisterPage() {
               </div>
             </div>
 
-            <div style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.24)", borderRadius: "0.75rem", padding: "0.85rem", color: "rgba(255,255,255,0.72)", fontSize: "0.82rem" }}>
-              Only Company accounts can self-register. Admin and Auditor accounts are created by AuditOne admins.
+            {/* Role */}
+            <div className="field-group">
+              <label className="label">Role</label>
+              <div className="input-icon">
+                <Users size={16} className="icon" />
+                <select
+                  className="select"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                >
+                  <option value="company">Company User</option>
+                  <option value="auditor">Auditor</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
             </div>
 
             <button type="submit" className="btn btn-primary btn-lg" style={{ justifyContent: "center", marginTop: "0.25rem" }}>

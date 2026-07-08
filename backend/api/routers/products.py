@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.api import deps
 from backend.models.product import Product
-from backend.schemas.product import ProductResponse, ProductCreate
+from backend.schemas.product import ProductResponse, ProductCreate, ProductUpdate
 
 router = APIRouter()
 
@@ -51,3 +51,34 @@ def read_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
+@router.put("/{product_id}", response_model=ProductResponse)
+def update_product(
+    product_id: int,
+    *,
+    db: Session = Depends(deps.get_db),
+    product_in: ProductUpdate,
+    current_user: Any = Depends(deps.get_current_active_user),
+) -> Any:
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    update_data = product_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(product, field, value)
+    db.commit()
+    db.refresh(product)
+    return product
+
+@router.delete("/{product_id}")
+def delete_product(
+    product_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user: Any = Depends(deps.get_current_active_user),
+) -> Any:
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    db.delete(product)
+    db.commit()
+    return {"message": "Product deleted successfully"}
