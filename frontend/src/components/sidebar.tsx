@@ -3,7 +3,8 @@ import {
   LayoutDashboard, ClipboardList, Package, QrCode, ScanLine,
   DollarSign, TrendingDown, FileText, Building2, Building, Users, Bell,
   Settings, LogOut, ChevronLeft, ChevronRight, Truck, ClipboardCheck,
-  Activity, Brain, ShieldCheck, UserCircle, ListChecks, UserPlus, BarChart3, History
+  Activity, Brain, ShieldCheck, UserCircle, ListChecks, UserPlus, BarChart3, History,
+  MessageSquare
 } from "lucide-react";
 import { useState } from "react";
 import { getMockUser, signOutMock } from "@/lib/auth";
@@ -35,6 +36,7 @@ function buildNavGroups(role: string): NavGroup[] {
         items: [
           { to: "/reports", icon: FileText, label: "Reports" },
           { to: "/notifications", icon: Bell, label: "Notifications" },
+          { to: "/chat", icon: MessageSquare, label: "Chat" },
         ],
       },
       {
@@ -71,6 +73,7 @@ function buildNavGroups(role: string): NavGroup[] {
       label: "Account",
       items: [
         { to: "/notifications", icon: Bell, label: "Notifications" },
+        { to: "/chat", icon: MessageSquare, label: "Chat" },
         { to: "/settings", icon: Settings, label: "Settings" },
       ],
     },
@@ -134,6 +137,7 @@ const adminGroups = [
     items: [
       { to: "/admin/reports", icon: FileText, label: "Reports" },
       { to: "/admin/notifications", icon: Bell, label: "Notifications" },
+      { to: "/admin/conversations", icon: MessageSquare, label: "Conversations (Read Only)" },
       { to: "/admin/system-logs", icon: History, label: "System Logs" },
       { to: "/admin/ai-insights", icon: Brain, label: "AI Insights" },
       { to: "/admin/settings", icon: Settings, label: "Settings" },

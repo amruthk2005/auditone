@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
-import { Building2, User, Mail, Lock, Eye, EyeOff, Home, ShieldCheck, Hash, MapPin, Phone, Briefcase } from "lucide-react";
+import { Building2, User, Mail, Lock, Eye, EyeOff, Home, ShieldCheck, Hash, MapPin, Phone, Briefcase, Users } from "lucide-react";
 import { registerCompanyPending } from "@/lib/auth";
 
 
@@ -179,7 +179,6 @@ export function RegisterPage() {
                   <option value="admin">Admin</option>
                 </select>
               </div>
-            </div>
             </div>
 
             <button type="submit" className="btn btn-primary btn-lg" style={{ justifyContent: "center", marginTop: "0.25rem" }}>

@@ -6,6 +6,8 @@ import { isAuthenticated } from "@/lib/auth";
 import { LoginPage, CompanyLoginPage, AuditorLoginPage } from "@/routes/login";
 import { RegisterPage } from "@/routes/register";
 import { DashboardPage } from "@/routes/dashboard";
+import { ChatPage } from "@/routes/chat";
+import { AdminConversationsPage } from "@/routes/admin-conversations";
 import { AuditsPage } from "@/routes/audits";
 import { AuditSessionsPage } from "@/routes/audit-sessions";
 import { ProductsPage } from "@/routes/products";
@@ -86,6 +88,8 @@ const notificationsRoute = createRoute({ getParentRoute: () => authLayout, path:
 const settingsRoute = createRoute({ getParentRoute: () => authLayout, path: "/settings", component: SettingsPage });
 const departmentsRoute = createRoute({ getParentRoute: () => authLayout, path: "/departments", component: DepartmentsPage });
 const vendorsRoute = createRoute({ getParentRoute: () => authLayout, path: "/vendors", component: VendorsPage });
+const chatRoute = createRoute({ getParentRoute: () => authLayout, path: "/chat", component: ChatPage });
+const adminConversationsRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/conversations", component: AdminConversationsPage });
 const adminDashboardRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/dashboard", component: AdminDashboardPage });
 const adminCompaniesRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/companies", component: AdminCompaniesPage });
 const adminCompanyPendingRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/companies/pending", component: AdminCompaniesPage });
@@ -130,6 +134,8 @@ export const routeTree = rootRoute.addChildren([
     settingsRoute,
     departmentsRoute,
     vendorsRoute,
+    chatRoute,
+    adminConversationsRoute,
     adminDashboardRoute,
     adminCompaniesRoute,
     adminCompanyPendingRoute,
