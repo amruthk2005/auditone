@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+sqlalchemy
+pymysql
+cryptography
+python-jose[cryptography]
+bcrypt
+mysql-connector-python
+email-validator
+python-multipart
+qrcode
+pillow
