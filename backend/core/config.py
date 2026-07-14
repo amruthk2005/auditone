@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
+        import os
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        db_path = os.path.join(project_root, "auditone.db")
+        if os.path.exists(db_path) or os.getenv("USE_SQLITE") == "true":
+            db_path_fixed = db_path.replace("\\", "/")
+            return f"sqlite:///{db_path_fixed}"
         return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_SERVER}:{self.MYSQL_PORT}/{self.MYSQL_DB}"
 
     # JWT Config
