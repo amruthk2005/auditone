@@ -6,6 +6,32 @@ from backend.models import user, company, product, audit, finance, notification
 
 Base.metadata.create_all(bind=engine)
 
+# Ensure demo users exist in DB automatically
+try:
+    from backend.database import SessionLocal
+    from backend.models.user import User
+    from backend.core.security import get_password_hash
+    db = SessionLocal()
+    demo_users = [
+        {"name": "Admin User", "email": "admin@acme.com", "password": "demo", "role": "admin"},
+        {"name": "Alice Johnson", "email": "company@acme.com", "password": "demo", "role": "company_user"},
+        {"name": "Bob Smith", "email": "auditor@acme.com", "password": "demo", "role": "auditor"},
+    ]
+    for u in demo_users:
+        existing = db.query(User).filter(User.email == u["email"]).first()
+        if not existing:
+            new_user = User(
+                name=u["name"],
+                email=u["email"],
+                password=get_password_hash(u["password"]),
+                role=u["role"],
+            )
+            db.add(new_user)
+    db.commit()
+    db.close()
+except Exception as e:
+    print(f"Auto-seed warning: {e}")
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,

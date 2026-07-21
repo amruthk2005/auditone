@@ -1,9 +1,18 @@
 import { stockInventory, mismatches, audits } from "@/lib/mock-data";
 import {
-  ClipboardList, AlertTriangle, CheckCircle2, FileText,
-  ScanLine, TrendingUp, Clock, ArrowRight,
+  ClipboardList, AlertTriangle, CheckCircle2, FileText, QrCode,
+  ScanLine, TrendingUp, Clock, ArrowRight, BarChart2, PieChart as PieIcon, Layers
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, Cell, PieChart, Pie
+} from "recharts";
+import { useQuery } from "@tanstack/react-query";
+import { fetchDashboardStats } from "@/lib/api";
+
+// ─── Colors Palette ───────────────────────────────────────────────────────────
+const COLORS = ["#6366f1", "#8b5cf6", "#10b981", "#f59e0b", "#3b82f6", "#ec4899", "#14b8a6", "#64748b"];
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 function KpiCard({ label, value, icon: Icon, color, tint, sub }: {
@@ -20,6 +29,31 @@ function KpiCard({ label, value, icon: Icon, color, tint, sub }: {
       <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "2.75rem", height: "2.75rem", borderRadius: "0.75rem", background: tint, color }}>
         <Icon size={20} />
       </span>
+    </div>
+  );
+}
+
+// ─── Section Card Wrapper ─────────────────────────────────────────────────────
+function ChartCard({
+  title, subtitle, icon: Icon, color = "#6366f1", children, action,
+}: {
+  title: string; subtitle: string; icon: React.ElementType; color?: string; children: React.ReactNode; action?: React.ReactNode;
+}) {
+  return (
+    <div className="card" style={{ padding: "1.5rem", border: "1px solid var(--border)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <div style={{ width: "2.25rem", height: "2.25rem", borderRadius: "0.625rem", background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", color }}>
+            <Icon size={18} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700 }}>{title}</h3>
+            <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--muted-foreground)" }}>{subtitle}</p>
+          </div>
+        </div>
+        {action}
+      </div>
+      {children}
     </div>
   );
 }
@@ -117,7 +151,7 @@ function QuickActions() {
         {[
           { to: "/scans", icon: ScanLine, label: "Scan Assets", color: "#059669", tint: "rgba(5,150,105,0.1)" },
           { to: "/audits", icon: ClipboardList, label: "Run Audit Tools", color: "#6366f1", tint: "rgba(99,102,241,0.1)" },
-          { to: "/reports", icon: FileText, label: "View Reports", color: "#8b5cf6", tint: "rgba(139,92,246,0.1)" },
+          { to: "/qr-codes", icon: QrCode, label: "QR Codes", color: "#8b5cf6", tint: "rgba(139,92,246,0.1)" },
           { to: "/audits", icon: TrendingUp, label: "Depreciation", color: "#f59e0b", tint: "rgba(245,158,11,0.1)" },
         ].map(({ to, icon: Icon, label, color, tint }) => (
           <Link
@@ -141,29 +175,99 @@ function QuickActions() {
 
 // ─── Main Auditor Dashboard ───────────────────────────────────────────────────
 export function AuditorDashboard() {
-  const scannedTotal = stockInventory.reduce((s, r) => s + r.actualQty, 0);
-  const pendingMismatches = mismatches.filter(m => !m.resolved).length;
-  const completedAudits = audits.filter(a => a.status === "Completed").length;
-  const inProgressAudits = audits.filter(a => a.status === "In Progress").length;
+  const { data: stats } = useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: fetchDashboardStats,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const scannedTotal = stats?.assets_scanned ?? stockInventory.reduce((s, r) => s + r.actualQty, 0);
+  const pendingMismatches = stats?.open_mismatches ?? mismatches.filter(m => !m.resolved).length;
+  const completedAudits = stats?.completed_audits ?? audits.filter(a => a.status === "Completed").length;
+  const inProgressAudits = stats?.in_progress_audits ?? audits.filter(a => a.status === "In Progress").length;
+
+  // ─── Prepare Auditor Charts ─────────────────────────────────────────────────
+  const scansProgressData = stats?.scans_progress_data ?? [
+    { location: "Warehouse A", expected: 110, scanned: 94 },
+    { location: "HQ Floor 3", expected: 70, scanned: 65 },
+    { location: "Printing Unit", expected: 18, scanned: 18 },
+    { location: "Warehouse B", expected: 75, scanned: 42 }
+  ];
+
+  const discrepancyData = stats?.discrepancy_data ?? [
+    { name: "Warehouse A", value: 2 },
+    { name: "HQ Floor 3", value: 1 }
+  ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
       {/* KPI Row */}
-      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))" }}>
+      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fill, minmax(240px,1fr))" }}>
         <KpiCard label="Active Sessions" value={String(inProgressAudits)} icon={Clock} color="#6366f1" tint="rgba(99,102,241,0.12)" sub={`${completedAudits} completed`} />
         <KpiCard label="Assets Scanned" value={String(scannedTotal)} icon={ScanLine} color="#059669" tint="rgba(5,150,105,0.12)" sub="Go to Scans →" />
         <KpiCard label="Open Mismatches" value={String(pendingMismatches)} icon={AlertTriangle} color="#f59e0b" tint="rgba(245,158,11,0.12)" sub="Requires attention" />
-        <KpiCard label="Reports Due" value="2" icon={FileText} color="#dc2626" tint="rgba(220,38,38,0.12)" sub="View in Reports →" />
       </div>
 
-      {/* Quick Actions */}
+      {/* ─── Graphical Analytics Section ───────────────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: "1.5rem" }}>
+        
+        {/* Verification Progress Graph */}
+        <ChartCard
+          title="Verification Progress by Location"
+          subtitle="Comparison of expected assets vs. scanned assets"
+          icon={BarChart2}
+          color="#059669"
+        >
+          <div style={{ height: "240px", marginTop: "0.5rem" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={scansProgressData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="location" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: "11px" }} />
+                <Bar dataKey="expected" name="System Expected" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                <Bar dataKey="scanned" name="Scanned Actuals" fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={30} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+
+        {/* Discrepancy Density Graph */}
+        <ChartCard
+          title="Discrepancy Distribution"
+          subtitle="Number of unresolved mismatches by location"
+          icon={Layers}
+          color="#f59e0b"
+        >
+          <div style={{ height: "240px", marginTop: "0.5rem" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={discrepancyData}
+                  cx="50%"
+                  cy="45%"
+                  innerRadius={60}
+                  outerRadius={85}
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  labelLine={false}
+                >
+                  {discrepancyData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => [`${value} Mismatches`, "Count"]} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+
+      </div>
+
+      {/* Quick Actions at the bottom */}
       <QuickActions />
-
-      {/* Two-column: Recent Audits + Open Mismatches */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "1.75rem" }}>
-        <RecentAuditsCard />
-        <MismatchSummaryCard />
-      </div>
     </div>
   );
 }

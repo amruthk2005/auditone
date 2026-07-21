@@ -4,7 +4,7 @@ import { getMockUser } from "@/lib/auth";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { AuditorDashboard } from "@/components/dashboards/AuditorDashboard";
 import { CompanyDashboard } from "@/components/dashboards/CompanyDashboard";
-import { Plus, Download } from "lucide-react";
+import { Home, Plus, Download } from "lucide-react";
 
 export function DashboardPage() {
   const user = getMockUser();
@@ -21,8 +21,8 @@ export function DashboardPage() {
     description = "Conduct audits, scan assets, and track inventory discrepancies.";
     actions = (
       <>
-        <Link to="/reports" className="btn btn-outline btn-sm">
-          <Download size={14} /> Export Reports
+        <Link to="/login" className="btn btn-outline btn-sm" style={{ gap: "0.35rem" }} title="Go to Welcome Portal">
+          <Home size={14} color="var(--primary)" /> Welcome Portal
         </Link>
       </>
     );
@@ -32,6 +32,9 @@ export function DashboardPage() {
     description = "Manage your product catalog, stock inventory, and asset valuations.";
     actions = (
       <>
+        <Link to="/login" className="btn btn-outline btn-sm" style={{ gap: "0.35rem" }} title="Go to Welcome Portal">
+          <Home size={14} color="var(--primary)" /> Welcome Portal
+        </Link>
         <Link to="/products" className="btn btn-primary btn-sm">
           <Plus size={14} /> View All Products
         </Link>
@@ -39,9 +42,14 @@ export function DashboardPage() {
     );
   } else {
     actions = (
-      <Link to="/audits" className="btn btn-primary btn-sm">
-        <Plus size={14} /> New Audit
-      </Link>
+      <>
+        <Link to="/login" className="btn btn-outline btn-sm" style={{ gap: "0.35rem" }} title="Go to Welcome Portal">
+          <Home size={14} color="var(--primary)" /> Welcome Portal
+        </Link>
+        <Link to="/audits" className="btn btn-primary btn-sm">
+          <Plus size={14} /> New Audit
+        </Link>
+      </>
     );
   }
 

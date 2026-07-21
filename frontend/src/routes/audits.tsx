@@ -1,29 +1,30 @@
 import { useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import { StatusBadge } from "@/components/status-badge";
-import { audits, stockInventory, mismatches } from "@/lib/mock-data";
+import { stockInventory, mismatches } from "@/lib/mock-data";
 import {
   ClipboardList, PlayCircle, CheckCircle2, CalendarPlus,
   Calculator, AlertTriangle, CheckCircle, Check, X,
-  MessageSquare, ChevronDown, ChevronUp,
+  MessageSquare, ChevronDown, ChevronUp, Loader2, AlertCircle, UserCheck, Calendar
 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchAudits, createAuditApi } from "@/lib/api";
 
-// ─── Section Header ───────────────────────────────────────────────────────────
-function SectionHeader({
-  icon: Icon, title, subtitle, color = "var(--primary)",
-}: { icon: React.ElementType; title: string; subtitle?: string; color?: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
-      <div style={{ width: "2.25rem", height: "2.25rem", borderRadius: "0.625rem", background: `${color}22`, display: "flex", alignItems: "center", justifyContent: "center", color }}>
-        <Icon size={18} />
-      </div>
-      <div>
-        <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>{title}</h2>
-        {subtitle && <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--muted-foreground)" }}>{subtitle}</p>}
-      </div>
-    </div>
-  );
-}
+type AuditRow = {
+  id: number;
+  type: string;
+  audit_date: string;
+  auditor_name: string;
+  scope: string | null;
+  instructions: string | null;
+  status: string;
+};
+
+const INITIAL_FALLBACK_AUDITS: AuditRow[] = [
+  { id: 1, type: "Physical Stock Audit", audit_date: "2026-07-26", auditor_name: "Rohan Sharma (Lead Auditor)", scope: "Warehouse A & HQ Floor 3", instructions: "Verify computing and peripheral assets", status: "Scheduled" },
+  { id: 2, type: "Asset Valuation Audit", audit_date: "2026-07-19", auditor_name: "Priya Verma (Senior Auditor)", scope: "HQ Operations & Printing Unit", instructions: "Verify depreciation ledger against condition", status: "In Progress" },
+  { id: 3, type: "Compliance Audit", audit_date: "2026-07-11", auditor_name: "Anish Kumar", scope: "All Locations", instructions: "Annual physical inventory compliance verification", status: "Completed" },
+];
 
 // ─── Collapsible Card ─────────────────────────────────────────────────────────
 function CollapsibleCard({
@@ -61,18 +62,193 @@ function CollapsibleCard({
   );
 }
 
+// ─── Schedule Audit Modal ──────────────────────────────────────────────────────
+function ScheduleAuditModal({ onClose }: { onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const [auditorName, setAuditorName] = useState("");
+  const [auditDate, setAuditDate] = useState(todayStr);
+  const [auditType, setAuditType] = useState("Physical Stock Audit");
+  const [scope, setScope] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: () => createAuditApi({
+      auditor_name: auditorName,
+      audit_date: auditDate,
+      type: auditType,
+      scope: scope || "HQ & All Warehouses",
+      instructions: instructions || "Full QR verification of tracked physical assets.",
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
+      onClose();
+    },
+    onError: (err: any) => {
+      setErrorMsg(err?.response?.data?.detail || "Failed to schedule audit session.");
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!auditorName.trim()) {
+      setErrorMsg("Please specify who is going to audit (Auditor Name).");
+      return;
+    }
+    if (!auditDate) {
+      setErrorMsg("Please select the scheduled audit date.");
+      return;
+    }
+    setErrorMsg(null);
+    mutation.mutate();
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)",
+        display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
+      }}
+      onClick={(e) => e.target === e.currentTarget && !mutation.isPending && onClose()}
+    >
+      <div
+        style={{
+          background: "var(--card, #fff)", border: "1px solid var(--border)",
+          borderRadius: "1rem", padding: "2rem", width: "100%", maxWidth: "540px",
+          boxShadow: "0 25px 60px rgba(0,0,0,0.35)", maxHeight: "90vh", overflowY: "auto",
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div
+              style={{
+                width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem",
+                background: "linear-gradient(135deg, #0ea5e9, #0284c7)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >
+              <CalendarPlus size={18} color="#fff" />
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700 }}>Schedule New Audit</h2>
+              <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--muted-foreground)" }}>
+                Specify assigned auditor and scheduled execution date
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} disabled={mutation.isPending} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)" }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {errorMsg && (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: "0.5rem", padding: "0.75rem", color: "#f87171", fontSize: "0.82rem" }}>
+            <AlertCircle size={14} /> {errorMsg}
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+          {/* Who is going to audit */}
+          <div className="field-group">
+            <label className="label" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <UserCheck size={13} color="var(--primary)" /> Who is going to audit? (Auditor Name) *
+            </label>
+            <input
+              type="text"
+              className="input"
+              placeholder="e.g. Rohan Sharma (Lead Auditor)"
+              value={auditorName}
+              onChange={(e) => setAuditorName(e.target.value)}
+            />
+          </div>
+
+          {/* Audit Date & Category */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div className="field-group">
+              <label className="label" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                <Calendar size={13} color="var(--primary)" /> Scheduled Date *
+              </label>
+              <input
+                type="date"
+                className="input"
+                value={auditDate}
+                onChange={(e) => setAuditDate(e.target.value)}
+              />
+            </div>
+
+            <div className="field-group">
+              <label className="label">Audit Category</label>
+              <select
+                className="input"
+                value={auditType}
+                onChange={(e) => setAuditType(e.target.value)}
+              >
+                <option value="Physical Stock Audit">Physical Stock Audit</option>
+                <option value="Asset Valuation Audit">Asset Valuation Audit</option>
+                <option value="Compliance Audit">Compliance Audit</option>
+                <option value="Quarterly Review">Quarterly Review</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Audit Scope */}
+          <div className="field-group">
+            <label className="label">Audit Scope & Location</label>
+            <input
+              type="text"
+              className="input"
+              placeholder="e.g. Warehouse A & HQ Floor 3"
+              value={scope}
+              onChange={(e) => setScope(e.target.value)}
+            />
+          </div>
+
+          {/* Instructions */}
+          <div className="field-group">
+            <label className="label">Audit Instructions & Notes</label>
+            <textarea
+              className="input"
+              placeholder="e.g. Perform full physical QR validation and record discrepancies."
+              rows={2}
+              style={{ resize: "vertical" }}
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.5rem" }}>
+          <button className="btn btn-outline" style={{ flex: 1, justifyContent: "center" }} onClick={onClose} disabled={mutation.isPending}>Cancel</button>
+          <button
+            className="btn btn-primary"
+            style={{ flex: 1, justifyContent: "center", background: "linear-gradient(135deg,#0ea5e9,#0284c7)", border: "none" }}
+            disabled={mutation.isPending}
+            onClick={handleSubmit}
+          >
+            {mutation.isPending ? <><Loader2 size={14} className="animate-spin" /> Scheduling…</> : <><CalendarPlus size={14} /> Schedule Audit</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Audit Schedule Table ─────────────────────────────────────────────────────
-function AuditScheduleTable() {
-  const scheduled = audits.filter(a => a.status === "Scheduled").length;
-  const inProgress = audits.filter(a => a.status === "In Progress").length;
-  const completed = audits.filter(a => a.status === "Completed").length;
+function AuditScheduleTable({ auditsList }: { auditsList: AuditRow[] }) {
+  const scheduled = auditsList.filter(a => (a.status || "").toLowerCase() === "scheduled").length;
+  const inProgress = auditsList.filter(a => (a.status || "").toLowerCase() === "in progress").length;
+  const completed = auditsList.filter(a => (a.status || "").toLowerCase() === "completed").length;
 
   return (
     <>
       {/* KPI strip */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
         {[
-          { label: "Total Audits", value: audits.length, icon: ClipboardList, color: "#6366f1" },
+          { label: "Total Audits", value: auditsList.length, icon: ClipboardList, color: "#6366f1" },
           { label: "Scheduled", value: scheduled, icon: CalendarPlus, color: "#0ea5e9" },
           { label: "In Progress", value: inProgress, icon: PlayCircle, color: "#f59e0b" },
           { label: "Completed", value: completed, icon: CheckCircle2, color: "#059669" },
@@ -92,19 +268,27 @@ function AuditScheduleTable() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Audit Name</th>
-                <th>Scope</th>
-                <th>Scheduled For</th>
+                <th>ID</th>
+                <th>Auditor Assigned</th>
+                <th>Audit Category</th>
+                <th>Scope / Location</th>
+                <th>Scheduled Date</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {audits.map((a) => (
+              {auditsList.map((a) => (
                 <tr key={a.id}>
-                  <td><span style={{ fontWeight: 500, color: "var(--primary)" }}>{a.name}</span></td>
-                  <td style={{ color: "var(--muted-foreground)", fontSize: "0.875rem" }}>{a.scope}</td>
-                  <td style={{ color: "var(--muted-foreground)", fontSize: "0.875rem" }}>{a.scheduledFor}</td>
-                  <td><StatusBadge value={a.status} /></td>
+                  <td><span style={{ fontFamily: "monospace", fontSize: "0.78rem", color: "var(--primary)", fontWeight: 700 }}>#{a.id}</span></td>
+                  <td style={{ fontWeight: 600 }}>{a.auditor_name || "Unassigned"}</td>
+                  <td>
+                    <span style={{ background: "rgba(14,165,233,0.1)", color: "#0ea5e9", padding: "0.15rem 0.5rem", borderRadius: "0.375rem", fontSize: "0.73rem", fontWeight: 600 }}>
+                      {a.type}
+                    </span>
+                  </td>
+                  <td style={{ color: "var(--muted-foreground)", fontSize: "0.85rem" }}>{a.scope || "—"}</td>
+                  <td style={{ color: "var(--muted-foreground)", fontSize: "0.85rem", fontWeight: 600 }}>{a.audit_date}</td>
+                  <td><StatusBadge value={a.status || "Scheduled"} /></td>
                 </tr>
               ))}
             </tbody>
@@ -263,7 +447,7 @@ function MismatchReporter() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <span style={{ fontWeight: 600, fontSize: "0.9rem" }}>{m.productName}</span>
+                  <span style={{ fontWeight: 600, fontSize: "0.95rem" }}>{m.productName}</span>
                   <span style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "var(--primary)", background: "rgba(109,40,217,0.1)", padding: "0.1rem 0.4rem", borderRadius: "0.25rem" }}>{m.sku}</span>
                 </div>
                 <div style={{ fontSize: "0.78rem", color: "var(--muted-foreground)", marginTop: "0.2rem" }}>
@@ -311,63 +495,81 @@ function MismatchReporter() {
 
 // ─── Main Audits Page ─────────────────────────────────────────────────────────
 export function AuditsPage() {
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+  const { data: apiAudits } = useQuery<AuditRow[]>({
+    queryKey: ["audits"],
+    queryFn: fetchAudits,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const auditsList: AuditRow[] = Array.isArray(apiAudits) && apiAudits.length > 0
+    ? apiAudits
+    : INITIAL_FALLBACK_AUDITS;
+
   return (
-    <PageShell
-      title="Audit Centre"
-      description="Schedule audits, validate stock, calculate depreciation and resolve discrepancies."
-      actions={
-        <button className="btn btn-primary btn-sm">
-          <CalendarPlus size={15} /> Schedule Audit
-        </button>
-      }
-    >
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+    <>
+      {showScheduleModal && (
+        <ScheduleAuditModal onClose={() => setShowScheduleModal(false)} />
+      )}
 
-        {/* Audit Schedule */}
-        <CollapsibleCard
-          icon={ClipboardList}
-          title="Audit Schedule"
-          subtitle="View and manage all planned and active audit sessions"
-          color="#6366f1"
-          defaultOpen={true}
-        >
-          <AuditScheduleTable />
-        </CollapsibleCard>
+      <PageShell
+        title="Audit Centre"
+        description="Schedule audits, validate stock, calculate depreciation and resolve discrepancies."
+        actions={
+          <button className="btn btn-primary btn-sm" id="schedule-audit-btn" onClick={() => setShowScheduleModal(true)}>
+            <CalendarPlus size={15} /> Schedule Audit
+          </button>
+        }
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
-        {/* Stock Validator */}
-        <CollapsibleCard
-          icon={CheckCircle2}
-          title="Stock Validator"
-          subtitle="Compare physical count vs system expected count"
-          color="#3b82f6"
-          defaultOpen={true}
-        >
-          <StockValidator />
-        </CollapsibleCard>
+          {/* Audit Schedule */}
+          <CollapsibleCard
+            icon={ClipboardList}
+            title="Audit Schedule"
+            subtitle="View and manage all planned and active audit sessions"
+            color="#6366f1"
+            defaultOpen={true}
+          >
+            <AuditScheduleTable auditsList={auditsList} />
+          </CollapsibleCard>
 
-        {/* Depreciation Simulator */}
-        <CollapsibleCard
-          icon={Calculator}
-          title="Depreciation Simulator"
-          subtitle="Apply accounting methods to verify asset book values"
-          color="#8b5cf6"
-          defaultOpen={true}
-        >
-          <DepreciationSimulator />
-        </CollapsibleCard>
+          {/* Stock Validator */}
+          <CollapsibleCard
+            icon={CheckCircle2}
+            title="Stock Validator"
+            subtitle="Compare physical count vs system expected count"
+            color="#3b82f6"
+            defaultOpen={true}
+          >
+            <StockValidator />
+          </CollapsibleCard>
 
-        {/* Mismatch Reporter */}
-        <CollapsibleCard
-          icon={AlertTriangle}
-          title="Mismatch Reporter"
-          subtitle="Log and resolve discrepancies found during audit"
-          color="#f59e0b"
-          defaultOpen={true}
-        >
-          <MismatchReporter />
-        </CollapsibleCard>
+          {/* Depreciation Simulator */}
+          <CollapsibleCard
+            icon={Calculator}
+            title="Depreciation Simulator"
+            subtitle="Apply accounting methods to verify asset book values"
+            color="#8b5cf6"
+            defaultOpen={true}
+          >
+            <DepreciationSimulator />
+          </CollapsibleCard>
 
-      </div>
-    </PageShell>
+          {/* Mismatch Reporter */}
+          <CollapsibleCard
+            icon={AlertTriangle}
+            title="Mismatch Reporter"
+            subtitle="Log and resolve discrepancies found during audit"
+            color="#f59e0b"
+            defaultOpen={true}
+          >
+            <MismatchReporter />
+          </CollapsibleCard>
+
+        </div>
+      </PageShell>
+    </>
   );
 }

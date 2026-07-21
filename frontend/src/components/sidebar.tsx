@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, ClipboardList, Package, QrCode, ScanLine,
+  Home, LayoutDashboard, ClipboardList, Package, QrCode, ScanLine,
   DollarSign, TrendingDown, FileText, Building2, Building, Users, Bell,
   Settings, LogOut, ChevronLeft, ChevronRight, Truck, ClipboardCheck,
 } from "lucide-react";
@@ -121,14 +121,19 @@ export function AppSidebar() {
   return (
     <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>
       <div className="sidebar-header" style={{ justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
+        <Link
+          to="/dashboard"
+          replace
+          style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", color: "inherit", cursor: "pointer" }}
+          title="Go to Home Dashboard"
+        >
           <div className="sidebar-logo">A1</div>
           {!collapsed && (
             <span className="sidebar-brand">
               Audit<span>One</span>
             </span>
           )}
-        </div>
+        </Link>
         <button
           onClick={() => setCollapsed((c) => !c)}
           style={{
@@ -160,6 +165,7 @@ export function AppSidebar() {
                 <Link
                   key={item.to}
                   to={item.to}
+                  replace={item.to === "/dashboard"}
                   className={`sidebar-item${active ? " active" : ""}`}
                   title={collapsed ? item.label : undefined}
                 >

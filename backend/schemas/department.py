@@ -1,7 +1,8 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class DepartmentBase(BaseModel):
-    company_id: int
+    company_id: Optional[int] = 1
     department_name: str
 
 class DepartmentCreate(DepartmentBase):

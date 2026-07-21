@@ -36,13 +36,32 @@ def create_company(
     db.refresh(company)
     return company
 
-@router.get("/{company_id}", response_model=CompanyResponse)
-def read_company(
-    company_id: int,
+from pydantic import BaseModel
+
+class WorkspaceSettingsUpdate(BaseModel):
+    company_name: str = "Acme Corp"
+    industry: str = "Technology"
+    timezone: str = "UTC+05:30 — India Standard Time"
+
+@router.put("/workspace")
+def update_workspace_settings(
+    payload: WorkspaceSettingsUpdate,
     db: Session = Depends(deps.get_db),
     current_user: Any = Depends(deps.get_current_active_user),
 ) -> Any:
-    company = db.query(Company).filter(Company.company_id == company_id).first()
-    if not company:
-        raise HTTPException(status_code=404, detail="Company not found")
-    return company
+    company = db.query(Company).first()
+    if company:
+        company.company_name = payload.company_name
+        company.company_type = payload.industry
+        db.add(company)
+        db.commit()
+        db.refresh(company)
+
+    return {
+        "message": "Workspace settings saved successfully",
+        "workspace": {
+            "company_name": payload.company_name,
+            "industry": payload.industry,
+            "timezone": payload.timezone,
+        }
+    }

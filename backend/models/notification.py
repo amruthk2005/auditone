@@ -17,5 +17,5 @@ class Report(Base):
     report_id = Column(Integer, primary_key=True, autoincrement=True)
     audit_id = Column(Integer, nullable=False)
     report_type = Column(String(100), nullable=True)
-    generated_date = Column(Date, server_default=func.current_date())
+    generated_date = Column(Date, default=func.current_date())
     report_status = Column(String(50), nullable=True)

@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     
     # MySQL Database config
     MYSQL_USER: str = "root"
-    MYSQL_PASSWORD: str = ""
+    MYSQL_PASSWORD: str = "auditone"
     MYSQL_SERVER: str = "localhost"
     MYSQL_PORT: str = "3306"
     MYSQL_DB: str = "auditone"

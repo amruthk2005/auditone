@@ -4,7 +4,7 @@ import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { validateQrCode } from "@/lib/api";
 import {
   Search, ScanLine, CheckCircle2, AlertCircle, Clock, Trash2, Package,
-  Camera, SwitchCamera, Loader2, Tag, MapPin, DollarSign,
+  Camera, SwitchCamera, Loader2, Tag, MapPin, DollarSign, Calculator, ChevronDown
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -27,6 +27,8 @@ type ScanRecord = {
   location: string;
   status: string;
   cost: string;
+  depreciationMethod: string;
+  netBookValue: string;
   valid: boolean;
 };
 
@@ -38,11 +40,23 @@ function nowString() {
   });
 }
 
+function calculateDepreciationValues(costNum: number, method: string) {
+  let rate = 0.20;
+  if (method.includes("Declining")) rate = 0.30;
+  else if (method.includes("WDV")) rate = 0.25;
+  else if (method.includes("FIFO")) rate = 0.15;
+  else if (method.includes("SYD")) rate = 0.28;
+
+  const dep = Math.round(costNum * rate);
+  const bookVal = Math.round(costNum - dep);
+  return { dep, bookVal, ratePct: Math.round(rate * 100) };
+}
+
 // ─── Inner Scanner Component (owns camera lifecycle) ─────────────────────────
 function ScannerWithCallback({
   onValidated,
 }: {
-  onValidated: (decodedText: string, result?: ValidationResult) => void;
+  onValidated: (decodedText: string, result?: ValidationResult, depreciationMethod?: string) => void;
 }) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
@@ -54,6 +68,7 @@ function ScannerWithCallback({
   const [validating, setValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [depreciationMethod, setDepreciationMethod] = useState("Straight-line (20% p.a.)");
 
   const stopScanner = useCallback(async () => {
     if (scannerRef.current && isRunning) {
@@ -94,10 +109,10 @@ function ScannerWithCallback({
           try {
             const result: ValidationResult = await validateQrCode(decodedText);
             setValidationResult(result);
-            onValidated(decodedText, result);
+            onValidated(decodedText, result, depreciationMethod);
           } catch {
             setValidationError("QR code not recognised in AuditOne system.");
-            onValidated(decodedText, undefined);
+            onValidated(decodedText, undefined, depreciationMethod);
           } finally {
             setValidating(false);
           }
@@ -110,7 +125,7 @@ function ScannerWithCallback({
     } finally {
       setIsStarting(false);
     }
-  }, [lastScanned, onValidated]);
+  }, [lastScanned, onValidated, depreciationMethod]);
 
   useEffect(() => {
     Html5Qrcode.getCameras()
@@ -132,6 +147,13 @@ function ScannerWithCallback({
     setActiveCameraIdx(nextIdx);
     scannerRef.current = null;
     setTimeout(() => startScanner(cameras[nextIdx].id), 300);
+  };
+
+  const handleMethodChange = (newMethod: string) => {
+    setDepreciationMethod(newMethod);
+    if (validationResult && validationResult.valid) {
+      onValidated(validationResult.qr_code, validationResult, newMethod);
+    }
   };
 
   return (
@@ -173,14 +195,17 @@ function ScannerWithCallback({
         </div>
       )}
 
+      {/* Scanned Product Result Card */}
       {validationResult?.valid && validationResult.product && (
         <div style={{ marginTop: "1rem", borderRadius: "0.75rem", border: "1px solid rgba(34,197,94,0.3)", background: "rgba(34,197,94,0.07)", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", borderBottom: "1px solid rgba(34,197,94,0.2)", background: "rgba(34,197,94,0.1)" }}>
             <CheckCircle2 size={16} color="#22c55e" />
             <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#22c55e" }}>Asset Verified — Added to log ✓</span>
           </div>
-          <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+
+          <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             <div style={{ fontSize: "1.05rem", fontWeight: 700 }}>{validationResult.product.name}</div>
+            
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
               {[
                 { icon: Tag, label: "Category", value: validationResult.product.category },
@@ -196,12 +221,50 @@ function ScannerWithCallback({
                 </div>
               ))}
             </div>
+
+            {/* Depreciation Method Dropdown requested by user */}
+            <div style={{ marginTop: "0.25rem" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.75rem", fontWeight: 700, color: "var(--primary)", marginBottom: "0.35rem" }}>
+                <Calculator size={13} color="var(--primary)" /> Select Depreciation Method for Audit:
+              </label>
+              <select
+                className="input"
+                style={{ fontSize: "0.82rem", padding: "0.4rem 0.6rem", width: "100%", borderColor: "rgba(109,40,217,0.3)" }}
+                value={depreciationMethod}
+                onChange={(e) => handleMethodChange(e.target.value)}
+              >
+                <option value="Straight-line (20% p.a.)">Straight-line Method (20% p.a.)</option>
+                <option value="Declining Balance (30% p.a.)">Declining Balance Method (30% p.a.)</option>
+                <option value="Written Down Value (WDV - 25% p.a.)">Written Down Value (WDV - 25% p.a.)</option>
+                <option value="FIFO Inventory (15% p.a.)">FIFO Inventory Valuation (15% p.a.)</option>
+                <option value="Sum-of-Years'-Digits (SYD - 28% p.a.)">Sum-of-the-Years'-Digits (SYD - 28% p.a.)</option>
+              </select>
+            </div>
+
+            {/* Live Depreciation Calculation Banner */}
+            {(() => {
+              const costNum = Number(validationResult.product.cost || 0);
+              const { dep, bookVal } = calculateDepreciationValues(costNum, depreciationMethod);
+              return (
+                <div style={{ display: "flex", gap: "0.5rem", background: "rgba(109,40,217,0.08)", border: "1px solid rgba(109,40,217,0.2)", borderRadius: "0.5rem", padding: "0.625rem 0.75rem", fontSize: "0.78rem" }}>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ color: "var(--muted-foreground)" }}>Annual Dep: </span>
+                    <strong style={{ color: "#dc2626" }}>-₹{dep.toLocaleString("en-IN")}</strong>
+                  </div>
+                  <div style={{ flex: 1, textAlign: "right" }}>
+                    <span style={{ color: "var(--muted-foreground)" }}>Net Book Value: </span>
+                    <strong style={{ color: "#059669" }}>₹{bookVal.toLocaleString("en-IN")}</strong>
+                  </div>
+                </div>
+              );
+            })()}
+
             <button
               className="btn btn-outline btn-sm"
               style={{ marginTop: "0.25rem" }}
               onClick={() => { setValidationResult(null); setValidationError(null); setLastScanned(null); }}
             >
-              Scan Next
+              Scan Next Product
             </button>
           </div>
         </div>
@@ -215,39 +278,53 @@ export function ScansPage() {
   const [scanLog, setScanLog] = useState<ScanRecord[]>([]);
   const [search, setSearch] = useState("");
 
-  const handleValidated = useCallback((decodedText: string, result?: ValidationResult) => {
+  const handleValidated = useCallback((decodedText: string, result?: ValidationResult, depreciationMethod?: string) => {
+    const method = depreciationMethod || "Straight-line (20% p.a.)";
+    const costNum = result?.product?.cost ? Number(result.product.cost) : 0;
+    const { bookVal } = calculateDepreciationValues(costNum, method);
+
     const rec: ScanRecord = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       timestamp: nowString(),
       qrCode: result?.qr_code ?? decodedText,
-      productName: result?.product?.name ?? "Unknown",
+      productName: result?.product?.name ?? "Unknown Asset",
       category: result?.product?.category ?? "—",
       location: result?.product?.location ?? "—",
       status: result?.product?.status ?? "—",
       cost: result?.product?.cost ? `₹${Number(result.product.cost).toLocaleString("en-IN")}` : "—",
+      depreciationMethod: method.split("(")[0].trim(),
+      netBookValue: costNum > 0 ? `₹${bookVal.toLocaleString("en-IN")}` : "—",
       valid: result?.valid ?? false,
     };
-    setScanLog(prev => [rec, ...prev]);
+
+    setScanLog(prev => {
+      // Avoid duplicate logs for same scan code in top 1 item
+      if (prev.length > 0 && prev[0].qrCode === rec.qrCode && prev[0].depreciationMethod === rec.depreciationMethod) {
+        return prev;
+      }
+      return [rec, ...prev];
+    });
   }, []);
 
   const filtered = scanLog.filter(r =>
     search === "" ||
     r.productName.toLowerCase().includes(search.toLowerCase()) ||
     r.qrCode.toLowerCase().includes(search.toLowerCase()) ||
-    r.location.toLowerCase().includes(search.toLowerCase())
+    r.location.toLowerCase().includes(search.toLowerCase()) ||
+    r.depreciationMethod.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <PageShell
       title="Scans & Validation"
-      description="Scan QR codes to validate and log asset details in real time."
+      description="Scan QR codes to validate assets and select accounting depreciation methods in real time."
       actions={
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <div style={{ position: "relative" }}>
             <Search size={14} style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: "var(--muted-foreground)" }} />
             <input
               type="text"
-              placeholder="Search scanned items…"
+              placeholder="Search scanned items or method…"
               className="input"
               style={{ paddingLeft: "2rem", fontSize: "0.8rem", height: "2.1rem" }}
               value={search}
@@ -272,8 +349,8 @@ export function ScansPage() {
                 <ScanLine size={16} />
               </div>
               <div>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem" }}>Asset Scanner</p>
-                <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" }}>Point camera at a QR code</p>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem" }}>Asset Scanner & Depreciation</p>
+                <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" }}>Point camera at asset QR code</p>
               </div>
             </div>
             <ScannerWithCallback onValidated={handleValidated} />
@@ -283,7 +360,7 @@ export function ScansPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
             <div style={{ background: "rgba(5,150,105,0.08)", border: "1px solid rgba(5,150,105,0.2)", borderRadius: "0.75rem", padding: "1rem", textAlign: "center" }}>
               <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "#059669" }}>{scanLog.filter(r => r.valid).length}</p>
-              <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted-foreground)", marginTop: "0.2rem" }}>Valid Scans</p>
+              <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted-foreground)", marginTop: "0.2rem" }}>Verified Assets</p>
             </div>
             <div style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: "0.75rem", padding: "1rem", textAlign: "center" }}>
               <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "#dc2626" }}>{scanLog.filter(r => !r.valid).length}</p>
@@ -300,9 +377,9 @@ export function ScansPage() {
                 <Package size={15} />
               </div>
               <div>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem" }}>Scanned Items Log</p>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem" }}>Scanned Assets & Depreciation Log</p>
                 <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" }}>
-                  {scanLog.length} item{scanLog.length !== 1 ? "s" : ""} scanned this session
+                  {scanLog.length} item{scanLog.length !== 1 ? "s" : ""} logged with depreciation methods
                 </p>
               </div>
             </div>
@@ -312,7 +389,7 @@ export function ScansPage() {
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "4rem 2rem", color: "var(--muted-foreground)", gap: "0.75rem" }}>
               <ScanLine size={40} style={{ opacity: 0.25 }} />
               <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 500 }}>No items scanned yet</p>
-              <p style={{ margin: 0, fontSize: "0.8rem" }}>Scan a QR code and it will appear here instantly</p>
+              <p style={{ margin: 0, fontSize: "0.8rem" }}>Scan an asset QR code to calculate depreciation and log details</p>
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: "3rem 2rem", textAlign: "center", color: "var(--muted-foreground)" }}>
@@ -325,9 +402,9 @@ export function ScansPage() {
                   <tr>
                     <th>Status</th>
                     <th>Product</th>
-                    <th>Category</th>
-                    <th>Location</th>
-                    <th>Cost</th>
+                    <th>Depreciation Method</th>
+                    <th>Acquisition Cost</th>
+                    <th>Net Book Value</th>
                     <th>Scanned At</th>
                   </tr>
                 </thead>
@@ -351,9 +428,13 @@ export function ScansPage() {
                           {r.qrCode.length > 22 ? r.qrCode.slice(0, 22) + "…" : r.qrCode}
                         </div>
                       </td>
-                      <td style={{ color: "var(--muted-foreground)", fontSize: "0.85rem" }}>{r.category}</td>
-                      <td style={{ color: "var(--muted-foreground)", fontSize: "0.85rem" }}>{r.location}</td>
-                      <td style={{ fontWeight: 600, color: "#059669", fontSize: "0.875rem" }}>{r.cost}</td>
+                      <td>
+                        <span style={{ background: "rgba(139,92,246,0.1)", color: "#8b5cf6", padding: "0.15rem 0.5rem", borderRadius: "0.375rem", fontSize: "0.73rem", fontWeight: 600, whiteSpace: "nowrap" }}>
+                          {r.depreciationMethod}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: 600, fontSize: "0.875rem" }}>{r.cost}</td>
+                      <td style={{ fontWeight: 700, color: "#059669", fontSize: "0.875rem" }}>{r.netBookValue}</td>
                       <td>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }}>
                           <Clock size={12} /> {r.timestamp}

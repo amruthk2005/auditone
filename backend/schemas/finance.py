@@ -1,13 +1,17 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from backend.models.finance import DepreciationMethod
+from enum import Enum
+
+class DepreciationMethodEnum(str, Enum):
+    STRAIGHT_LINE = "STRAIGHT_LINE"
+    DECLINING_BALANCE = "DECLINING_BALANCE"
 
 class FinanceRecordBase(BaseModel):
     product_id: int
     purchase_price: float
-    depreciation_method: Optional[DepreciationMethod] = DepreciationMethod.STRAIGHT_LINE
-    depreciation_rate: Optional[float] = None
+    depreciation_method: Optional[str] = "STRAIGHT_LINE"
+    depreciation_rate: Optional[float] = 0.1
     current_value: Optional[float] = None
 
 class FinanceRecordCreate(FinanceRecordBase):

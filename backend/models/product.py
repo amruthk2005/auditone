@@ -24,3 +24,8 @@ class QRCode(Base):
     qr_code = Column(String(100), unique=True, nullable=False)
     generated_date = Column(Date, nullable=True)
     barcode_type = Column(String(50), nullable=True)
+    generation_type = Column(String(50), default="SINGLE")
+    batch_quantity = Column(Integer, default=1)
+    location_tag = Column(String(255), nullable=True)
+    auditor_notes = Column(Text, nullable=True)
+    metadata_json = Column(Text, nullable=True)

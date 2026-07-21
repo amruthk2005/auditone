@@ -50,7 +50,12 @@ const registerRoute = createRoute({ getParentRoute: () => rootRoute, path: "/reg
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  beforeLoad: () => { throw redirect({ to: "/login" }); },
+  beforeLoad: () => {
+    if (isAuthenticated()) {
+      throw redirect({ to: "/dashboard" });
+    }
+    throw redirect({ to: "/login" });
+  },
   component: () => null,
 });
 

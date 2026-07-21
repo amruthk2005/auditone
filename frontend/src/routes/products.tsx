@@ -257,6 +257,14 @@ function DeleteModal({ product, onClose }: { product: Product; onClose: () => vo
   );
 }
 
+const INITIAL_FALLBACK_PRODUCTS: Product[] = [
+  { id: 1, name: "Laptop Dell Latitude 5300", category: "Computing", quantity: 30, cost: 1200, purchase_date: "2024-01-15", serial_no: "SN-DL5300-X1", location: "HQ Floor 3", vendor: "Dell Technologies India", description: "", status: "In Use" },
+  { id: 2, name: "Wireless Ergonomic Mouse", category: "Peripherals", quantity: 50, cost: 45, purchase_date: "2024-02-10", serial_no: "SN-WM102-Y2", location: "Warehouse A", vendor: "Logitech India", description: "", status: "In Use" },
+  { id: 3, name: "Projector Epson EB-X41", category: "AV Equipment", quantity: 5, cost: 780, purchase_date: "2024-03-01", serial_no: "SN-EBX41-Z3", location: "Meeting Rm 2", vendor: "Epson India", description: "", status: "In Storage" },
+  { id: 4, name: "Monitor LG 24\" FHD", category: "Displays", quantity: 40, cost: 320, purchase_date: "2024-03-12", serial_no: "SN-LG24MK-A4", location: "HQ Floor 3", vendor: "Apple India Pvt Ltd", description: "", status: "In Use" },
+  { id: 5, name: "HP LaserJet Pro Printer", category: "Printing", quantity: 8, cost: 450, purchase_date: "2024-04-05", serial_no: "SN-HPL401-B5", location: "HQ Floor 1", vendor: "Cisco Systems India", description: "", status: "Maintenance" },
+];
+
 // ─── Products Page ────────────────────────────────────────────────────────────
 export function ProductsPage() {
   const [showAdd, setShowAdd]     = useState(false);
@@ -266,10 +274,15 @@ export function ProductsPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
 
-  const { data: products = [], isLoading } = useQuery<Product[]>({
+  const { data: apiProducts, isLoading } = useQuery<Product[]>({
     queryKey: ["products"],
     queryFn: fetchProducts,
+    staleTime: 1000 * 60 * 5,
   });
+
+  const products: Product[] = Array.isArray(apiProducts) && apiProducts.length > 0
+    ? apiProducts
+    : INITIAL_FALLBACK_PRODUCTS;
 
   // KPIs
   const total     = products.length;
