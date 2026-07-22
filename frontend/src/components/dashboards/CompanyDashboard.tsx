@@ -2,10 +2,15 @@ import { useState, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { StatusBadge } from "@/components/status-badge";
 import {
+<<<<<<< Updated upstream
   Package, DollarSign, QrCode, ClipboardList,
   Plus, X, Upload, Download, TrendingUp, TrendingDown,
   CheckCircle2, AlertTriangle, Loader2, Copy, AlertCircle,
   FileText, BarChart2, Printer,
+=======
+  DollarSign, Boxes, TrendingDown, TrendingUp, BarChart2,
+  PieChart, LineChart as LineChartIcon, Layers, FileText, ArrowRight, RefreshCw,
+>>>>>>> Stashed changes
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -650,12 +655,33 @@ export function CompanyDashboard() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
+<<<<<<< Updated upstream
       {/* KPI Row */}
       <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))" }}>
         <KpiCard label="Total Products" value={String(products.length || stockInventory.length)} delta="+5.2%" up icon={Package} color="#6366f1" tint="rgba(99,102,241,0.12)" />
         <KpiCard label="Stock Value" value={`$${(totalValue / 1000).toFixed(1)}k`} delta="+1.8%" up icon={DollarSign} color="#059669" tint="rgba(5,150,105,0.12)" />
         <KpiCard label="QR Codes" value={String((qrCodes as QRRow[]).length)} delta="+3" up icon={QrCode} color="#8b5cf6" tint="rgba(139,92,246,0.12)" />
         <KpiCard label="Inventory Gaps" value={String(shortfalls)} delta={`${shortfalls} items`} up={false} icon={AlertTriangle} color="#dc2626" tint="rgba(220,38,38,0.12)" />
+=======
+
+      {/* Top Bar Action */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800 }}>Financial & Asset Operations Analytics</h2>
+          <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--muted-foreground)" }}>
+            Live valuation, depreciation, and category asset distribution dashboard
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => refetch()}
+            style={{ gap: "0.35rem", fontSize: "0.78rem" }}
+          >
+            <RefreshCw size={13} className={isLoading ? "animate-spin" : ""} /> Refresh Analytics
+          </button>
+        </div>
+>>>>>>> Stashed changes
       </div>
 
       {/* Section 1: Product Management */}

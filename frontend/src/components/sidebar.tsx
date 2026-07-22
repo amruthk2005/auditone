@@ -220,21 +220,6 @@ export function AppSidebar() {
               <RolePill role={role} />
             </div>
           )}
-          {!collapsed && (
-            <button
-              onClick={() => signOutMock()}
-              style={{
-                background: "none",
-                border: "none",
-                color: "rgba(255,255,255,0.5)",
-                cursor: "pointer",
-                padding: "0.25rem",
-              }}
-              title="Sign out"
-            >
-              <LogOut size={14} />
-            </button>
-          )}
         </div>
       </div>
     </aside>

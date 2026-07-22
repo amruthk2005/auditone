@@ -4,7 +4,11 @@ import { getMockUser } from "@/lib/auth";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { AuditorDashboard } from "@/components/dashboards/AuditorDashboard";
 import { CompanyDashboard } from "@/components/dashboards/CompanyDashboard";
+<<<<<<< Updated upstream
 import { Plus, Download } from "lucide-react";
+=======
+import { Plus } from "lucide-react";
+>>>>>>> Stashed changes
 
 export function DashboardPage() {
   const user = getMockUser();
@@ -19,6 +23,7 @@ export function DashboardPage() {
     DashboardContent = AuditorDashboard;
     title = "Auditor Workspace";
     description = "Conduct audits, scan assets, and track inventory discrepancies.";
+<<<<<<< Updated upstream
     actions = (
       <>
         <Link to="/reports" className="btn btn-outline btn-sm">
@@ -26,16 +31,25 @@ export function DashboardPage() {
         </Link>
       </>
     );
+=======
+    actions = null;
+>>>>>>> Stashed changes
   } else if (role === "company" || role === "companyuser" || role === "company_user") {
     DashboardContent = CompanyDashboard;
     title = "Company Operations";
     description = "Manage your product catalog, stock inventory, and asset valuations.";
     actions = (
+<<<<<<< Updated upstream
       <>
         <Link to="/products" className="btn btn-primary btn-sm">
           <Plus size={14} /> View All Products
         </Link>
       </>
+=======
+      <Link to="/products" className="btn btn-primary btn-sm">
+        <Plus size={14} /> View All Products
+      </Link>
+>>>>>>> Stashed changes
     );
   } else {
     actions = (
