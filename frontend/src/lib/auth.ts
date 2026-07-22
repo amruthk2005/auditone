@@ -30,7 +30,7 @@ export async function signInMock(opts: { email: string; password?: string; role?
   if (selectedRole === "Company" && isPendingCompanyEmail(email)) {
     throw new Error("Your company registration is pending admin approval.");
   }
-  
+
   try {
     const params = new URLSearchParams();
     params.append('username', email);
