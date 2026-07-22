@@ -2,7 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.config import settings
 from backend.database import engine, Base
-from backend.models import user, company, product, audit, finance, notification
+from backend.models import user, company, product, audit, finance, notification, chat
+from fastapi.staticfiles import StaticFiles
+import os
 
 Base.metadata.create_all(bind=engine)
 
@@ -11,6 +13,10 @@ app = FastAPI(
     version=settings.VERSION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
+
+# Ensure upload directory exists and mount static files
+os.makedirs("backend/static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 
 # Set all CORS enabled origins
 app.add_middleware(

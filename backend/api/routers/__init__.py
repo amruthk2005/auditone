@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend.api.routers import auth, companies, products, audits, finance, dashboard, notifications, departments, vendors, qr
+from backend.api.routers import auth, companies, products, audits, finance, dashboard, notifications, departments, vendors, qr, chat
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -12,4 +12,5 @@ api_router.include_router(audits.router, prefix="/audits", tags=["audits"])
 api_router.include_router(finance.router, prefix="/finance", tags=["finance"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 

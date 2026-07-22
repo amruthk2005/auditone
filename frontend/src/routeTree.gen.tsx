@@ -6,6 +6,8 @@ import { isAuthenticated } from "@/lib/auth";
 import { LoginPage, CompanyLoginPage, AuditorLoginPage } from "@/routes/login";
 import { RegisterPage } from "@/routes/register";
 import { DashboardPage } from "@/routes/dashboard";
+import { ChatPage } from "@/routes/chat";
+import { AdminConversationsPage } from "@/routes/admin-conversations";
 import { AuditsPage } from "@/routes/audits";
 import { AuditSessionsPage } from "@/routes/audit-sessions";
 import { ProductsPage } from "@/routes/products";
@@ -20,6 +22,22 @@ import { NotificationsPage } from "@/routes/notifications";
 import { SettingsPage } from "@/routes/settings";
 import { DepartmentsPage } from "@/routes/departments";
 import { VendorsPage } from "@/routes/vendors";
+import {
+  AdminAiInsightsPage,
+  AdminAuditDetailsPage,
+  AdminAuditsPage,
+  AdminAuditorsPage,
+  AdminCompanyDetailsPage,
+  AdminCompaniesPage,
+  AdminCreateAuditorPage,
+  AdminDashboardPage,
+  AdminNotificationsPage,
+  AdminProfilePage,
+  AdminReportsPage,
+  AdminSettingsPage,
+  AdminSystemLogsPage,
+  AuditorDashboardPage,
+} from "@/routes/admin";
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -70,6 +88,29 @@ const notificationsRoute = createRoute({ getParentRoute: () => authLayout, path:
 const settingsRoute = createRoute({ getParentRoute: () => authLayout, path: "/settings", component: SettingsPage });
 const departmentsRoute = createRoute({ getParentRoute: () => authLayout, path: "/departments", component: DepartmentsPage });
 const vendorsRoute = createRoute({ getParentRoute: () => authLayout, path: "/vendors", component: VendorsPage });
+const chatRoute = createRoute({ getParentRoute: () => authLayout, path: "/chat", component: ChatPage });
+const adminConversationsRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/conversations", component: AdminConversationsPage });
+const adminDashboardRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/dashboard", component: AdminDashboardPage });
+const adminCompaniesRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/companies", component: AdminCompaniesPage });
+const adminCompanyPendingRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/companies/pending", component: AdminCompaniesPage });
+const adminCompanyActiveRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/companies/active", component: AdminCompaniesPage });
+const adminCompanySuspendedRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/companies/suspended", component: AdminCompaniesPage });
+const adminCompanyDetailsRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/companies/$companyId", component: AdminCompanyDetailsPage });
+const adminAuditorsRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/auditors", component: AdminAuditorsPage });
+const adminAuditorCreateRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/auditors/create", component: AdminCreateAuditorPage });
+const adminAuditorAssignedRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/auditors/assigned", component: AdminAuditorsPage });
+const adminAuditorPerformanceRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/auditors/performance", component: AdminAuditorsPage });
+const adminAuditsRunningRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/audits/running", component: AdminAuditsPage });
+const adminAuditsCompletedRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/audits/completed", component: AdminAuditsPage });
+const adminAuditsCancelledRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/audits/cancelled", component: AdminAuditsPage });
+const adminAuditDetailsRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/audits/$auditId", component: AdminAuditDetailsPage });
+const adminReportsRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/reports", component: AdminReportsPage });
+const adminNotificationsRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/notifications", component: AdminNotificationsPage });
+const adminSystemLogsRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/system-logs", component: AdminSystemLogsPage });
+const adminAiInsightsRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/ai-insights", component: AdminAiInsightsPage });
+const adminSettingsRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/settings", component: AdminSettingsPage });
+const adminProfileRoute = createRoute({ getParentRoute: () => authLayout, path: "/admin/profile", component: AdminProfilePage });
+const auditorDashboardRoute = createRoute({ getParentRoute: () => authLayout, path: "/auditor/dashboard", component: AuditorDashboardPage });
 
 export const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -93,5 +134,28 @@ export const routeTree = rootRoute.addChildren([
     settingsRoute,
     departmentsRoute,
     vendorsRoute,
+    chatRoute,
+    adminConversationsRoute,
+    adminDashboardRoute,
+    adminCompaniesRoute,
+    adminCompanyPendingRoute,
+    adminCompanyActiveRoute,
+    adminCompanySuspendedRoute,
+    adminCompanyDetailsRoute,
+    adminAuditorsRoute,
+    adminAuditorCreateRoute,
+    adminAuditorAssignedRoute,
+    adminAuditorPerformanceRoute,
+    adminAuditsRunningRoute,
+    adminAuditsCompletedRoute,
+    adminAuditsCancelledRoute,
+    adminAuditDetailsRoute,
+    adminReportsRoute,
+    adminNotificationsRoute,
+    adminSystemLogsRoute,
+    adminAiInsightsRoute,
+    adminSettingsRoute,
+    adminProfileRoute,
+    auditorDashboardRoute,
   ]),
 ]);

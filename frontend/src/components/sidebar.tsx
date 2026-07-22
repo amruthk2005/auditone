@@ -3,6 +3,8 @@ import {
   LayoutDashboard, ClipboardList, Package, QrCode, ScanLine,
   DollarSign, TrendingDown, FileText, Building2, Building, Users, Bell,
   Settings, LogOut, ChevronLeft, ChevronRight, Truck, ClipboardCheck,
+  Activity, Brain, ShieldCheck, UserCircle, ListChecks, UserPlus, BarChart3, History,
+  MessageSquare
 } from "lucide-react";
 import { useState } from "react";
 import { getMockUser, signOutMock } from "@/lib/auth";
@@ -11,21 +13,7 @@ type NavGroup = { label: string; items: { to: string; icon: React.ElementType; l
 
 function buildNavGroups(role: string): NavGroup[] {
   if (role === "admin") {
-    return [
-      {
-        label: "Overview",
-        items: [{ to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }],
-      },
-      {
-        label: "Admin",
-        items: [
-          { to: "/companies", icon: Building2, label: "Companies" },
-          { to: "/users", icon: Users, label: "Users" },
-          { to: "/notifications", icon: Bell, label: "Notifications" },
-          { to: "/settings", icon: Settings, label: "Settings" },
-        ],
-      },
-    ];
+    return adminGroups;
   }
 
   if (role === "auditor") {
@@ -48,6 +36,7 @@ function buildNavGroups(role: string): NavGroup[] {
         items: [
           { to: "/reports", icon: FileText, label: "Reports" },
           { to: "/notifications", icon: Bell, label: "Notifications" },
+          { to: "/chat", icon: MessageSquare, label: "Chat" },
         ],
       },
       {
@@ -84,6 +73,7 @@ function buildNavGroups(role: string): NavGroup[] {
       label: "Account",
       items: [
         { to: "/notifications", icon: Bell, label: "Notifications" },
+        { to: "/chat", icon: MessageSquare, label: "Chat" },
         { to: "/settings", icon: Settings, label: "Settings" },
       ],
     },
@@ -108,6 +98,53 @@ function RolePill({ role }: { role: string }) {
     </span>
   );
 }
+
+const adminGroups = [
+  {
+    label: "Overview",
+    items: [
+      { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    ],
+  },
+  {
+    label: "Company Management",
+    items: [
+      { to: "/admin/companies", icon: Building2, label: "Company List" },
+      { to: "/admin/companies/pending", icon: ListChecks, label: "Pending Approvals" },
+      { to: "/admin/companies/active", icon: ShieldCheck, label: "Active Companies" },
+      { to: "/admin/companies/suspended", icon: Building, label: "Suspended Companies" },
+    ],
+  },
+  {
+    label: "Auditor Management",
+    items: [
+      { to: "/admin/auditors", icon: Users, label: "Auditor List" },
+      { to: "/admin/auditors/create", icon: UserPlus, label: "Create Auditor" },
+      { to: "/admin/auditors/assigned", icon: ClipboardList, label: "Assigned Audits" },
+      { to: "/admin/auditors/performance", icon: BarChart3, label: "Performance" },
+    ],
+  },
+  {
+    label: "Audit Management",
+    items: [
+      { to: "/admin/audits/running", icon: Activity, label: "Running Audits" },
+      { to: "/admin/audits/completed", icon: ClipboardList, label: "Completed Audits" },
+      { to: "/admin/audits/cancelled", icon: ListChecks, label: "Cancelled Audits" },
+    ],
+  },
+  {
+    label: "Platform",
+    items: [
+      { to: "/admin/reports", icon: FileText, label: "Reports" },
+      { to: "/admin/notifications", icon: Bell, label: "Notifications" },
+      { to: "/admin/conversations", icon: MessageSquare, label: "Conversations (Read Only)" },
+      { to: "/admin/system-logs", icon: History, label: "System Logs" },
+      { to: "/admin/ai-insights", icon: Brain, label: "AI Insights" },
+      { to: "/admin/settings", icon: Settings, label: "Settings" },
+      { to: "/admin/profile", icon: UserCircle, label: "Admin Profile" },
+    ],
+  },
+];
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -182,21 +219,6 @@ export function AppSidebar() {
               <div className="sidebar-user-name">{user?.name ?? "Guest"}</div>
               <RolePill role={role} />
             </div>
-          )}
-          {!collapsed && (
-            <button
-              onClick={() => signOutMock()}
-              style={{
-                background: "none",
-                border: "none",
-                color: "rgba(255,255,255,0.5)",
-                cursor: "pointer",
-                padding: "0.25rem",
-              }}
-              title="Sign out"
-            >
-              <LogOut size={14} />
-            </button>
           )}
         </div>
       </div>

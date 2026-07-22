@@ -658,6 +658,8 @@ export function CompanyDashboard() {
         <KpiCard label="Inventory Gaps" value={String(shortfalls)} delta={`${shortfalls} items`} up={false} icon={AlertTriangle} color="#dc2626" tint="rgba(220,38,38,0.12)" />
       </div>
 
+
+
       {/* Section 1: Product Management */}
       <ProductSection />
 
